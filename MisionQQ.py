@@ -11,9 +11,10 @@ import random
 import threading
 import traceback
 
-# --- FORZAR ICONO EN BARRA DE TAREAS ---
+# --- IDENTIFICADOR ÚNICO DE APP ---
 try:
-    myappid = 'idynsoft.sabandijabot.reptil.v2'
+    # Cambiado a un ID genérico para el bot
+    myappid = 'sabandijabot.reptil.v2'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except:
     pass
@@ -32,8 +33,8 @@ if not es_admin():
 # --- PALETA SABANDIJA REPTIL ---
 COLOR_BG = "#050a05"        
 COLOR_CARD = "#0d1a0d"      
-COLOR_ACCENT = "#39ff14"    # Verde neón
-COLOR_SECONDARY = "#ccff00" # Amarillo lima
+COLOR_ACCENT = "#39ff14"    
+COLOR_SECONDARY = "#ccff00" 
 COLOR_TEXT_OFF = "#4a5d4a"  
 COLOR_TEXT_ON = "#39ff14"   
 COLOR_INPUT_BG = "#162616"  
@@ -208,9 +209,7 @@ class App:
         try:
             hwnd = int(sel.split("(ID: ")[1].replace(")", ""))
             if hwnd in self.instances: return
-            
             usar_ulti_real = self.ulti_var.get() if self.modo_var.get() == "FARMA_EXP" else False
-            
             bot = BotInstance(hwnd, sel, self.modo_var.get(), float(self.entry_delay.get() or 5), usar_ulti=usar_ulti_real)
             self.instances[hwnd] = bot; bot.start()
             f = tk.Frame(self.scrollable_frame, bg=COLOR_CARD, pady=5); f.pack(fill="x", pady=2, padx=5)
@@ -226,13 +225,11 @@ if __name__ == "__main__":
         icon_path = os.path.join(base_path, "sabandijab0tico.ico")
         if os.path.exists(icon_path):
             root.iconbitmap(icon_path)
-
         try:
             from ctypes import windll, byref, sizeof, c_int
             hwnd_title = windll.user32.GetParent(root.winfo_id())
             windll.dwmapi.DwmSetWindowAttribute(hwnd_title, 20, byref(c_int(1)), sizeof(c_int(1)))
         except: pass
-        
         App(root); root.mainloop()
     except Exception:
         traceback.print_exc(); input("\nPresiona ENTER para cerrar...")
