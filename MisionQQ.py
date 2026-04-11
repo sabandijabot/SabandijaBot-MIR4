@@ -13,7 +13,6 @@ import traceback
 
 # --- IDENTIFICADOR ÚNICO DE APP ---
 try:
-    # Cambiado a un ID genérico para el bot
     myappid = 'sabandijabot.reptil.v2'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except:
@@ -40,12 +39,13 @@ COLOR_TEXT_ON = "#39ff14"
 COLOR_INPUT_BG = "#162616"  
 
 class BotInstance(threading.Thread):
-    def __init__(self, hwnd, window_name, modo, delay_personalizado=5, usar_ulti=False):
+    def __init__(self, hwnd, window_name, modo, delay_personalizado=5, usar_ulti=False, apodo=""):
         super().__init__()
         self.hwnd = hwnd
         self.modo = modo
         self.delay_personalizado = delay_personalizado
         self.usar_ulti = usar_ulti
+        self.apodo = apodo
         self.running = True
         self.daemon = True
 
@@ -89,7 +89,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("SABANDIJA B0T - REPTIL EDITION")
-        self.root.geometry("600x760")
+        self.root.geometry("600x850")
         self.root.configure(bg=COLOR_BG)
         self.instances = {}
         self.ulti_var = tk.BooleanVar(value=False)
@@ -114,6 +114,22 @@ class App:
         self.setup_tab_bot()
         self.setup_tab_layout()
 
+        self.version_str = self.obtener_version_estatica()
+        tk.Label(self.root, text=self.version_str, bg=COLOR_BG, fg=COLOR_TEXT_OFF, 
+                 font=('Consolas', 8)).pack(side="bottom", anchor="se", padx=10, pady=5)
+
+    def obtener_version_estatica(self):
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        archivo_ver = os.path.join(base_path, "version.txt")
+        version = 0
+        if os.path.exists(archivo_ver):
+            with open(archivo_ver, "r") as f:
+                try:
+                    linea = f.read().strip()
+                    version = int(linea) if linea else 0
+                except: pass
+        return f"v2.0.{version}"
+
     def update_radio_colors(self):
         if self.modo_var.get() == "MISION_Q":
             self.rb_mision.configure(fg=COLOR_TEXT_ON)
@@ -127,41 +143,41 @@ class App:
     def setup_tab_bot(self):
         frame_sel = ttk.LabelFrame(self.tab_bot, text=" RECTIL TARGET ", style="Card.TLabelframe")
         frame_sel.pack(fill="x", padx=15, pady=10)
-        
         self.combo_ventanas = ttk.Combobox(frame_sel, state="readonly", width=40)
-        self.combo_ventanas.pack(pady=10, padx=10)
+        self.combo_ventanas.pack(pady=5, padx=10)
+        
+        apodo_frame = tk.Frame(frame_sel, bg=COLOR_BG)
+        apodo_frame.pack(fill="x", padx=10, pady=5)
+        tk.Label(apodo_frame, text="IDENTIFICADOR:", bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 8, 'bold')).pack(side="left")
+        self.entry_apodo = tk.Entry(apodo_frame, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10), insertbackground=COLOR_ACCENT)
+        self.entry_apodo.pack(side="left", padx=5, fill="x", expand=True)
         
         tk.Button(frame_sel, text="REFRESCAR VISIÓN", bg=COLOR_CARD, fg=COLOR_ACCENT, relief="groove", 
-                  font=('Segoe UI', 9, 'bold'), command=self.listar_ventanas).pack(pady=5)
-
+                  command=self.listar_ventanas).pack(pady=5)
+        
         frame_cfg = ttk.LabelFrame(self.tab_bot, text=" MODO DE CAZA ", style="Card.TLabelframe")
         frame_cfg.pack(fill="x", padx=15, pady=10)
-        
         self.modo_var = tk.StringVar(value="MISION_Q")
         self.rb_mision = tk.Radiobutton(frame_cfg, text="MISIÓN Q (AUTO)", variable=self.modo_var, value="MISION_Q", 
-                                       bg=COLOR_BG, fg=COLOR_TEXT_ON, selectcolor="#000", font=('Segoe UI', 10, 'bold'), command=self.update_radio_colors)
-        self.rb_mision.pack(anchor="w", padx=20, pady=2)
-
+                                       bg=COLOR_BG, fg=COLOR_TEXT_ON, selectcolor="#000", command=self.update_radio_colors)
+        self.rb_mision.pack(anchor="w", padx=20)
         self.rb_farma = tk.Radiobutton(frame_cfg, text="FARMA EXP (AFK)", variable=self.modo_var, value="FARMA_EXP", 
-                                      bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", font=('Segoe UI', 10, 'bold'), command=self.update_radio_colors)
-        self.rb_farma.pack(anchor="w", padx=20, pady=2)
+                                      bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", command=self.update_radio_colors)
+        self.rb_farma.pack(anchor="w", padx=20)
+        self.check_ulti = tk.Checkbutton(frame_cfg, text="LANZAR ULTI [R]", variable=self.ulti_var,
+                                        bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", state="disabled")
+        self.check_ulti.pack(anchor="w", padx=40)
         
-        self.check_ulti = tk.Checkbutton(frame_cfg, text="LANZAR ULTI [R] (Solo Farma)", variable=self.ulti_var,
-                                        bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", state="disabled",
-                                        activebackground=COLOR_BG, activeforeground=COLOR_SECONDARY,
-                                        font=('Segoe UI', 9, 'bold'))
-        self.check_ulti.pack(anchor="w", padx=40, pady=5)
-
         delay_frame = tk.Frame(frame_cfg, bg=COLOR_BG)
-        delay_frame.pack(fill="x", padx=20, pady=10)
-        tk.Label(delay_frame, text="DELAY CAZA (SEG):", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        delay_frame.pack(pady=5)
+        tk.Label(delay_frame, text="DELAY (SEG):", bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 8, 'bold')).pack(side="left", padx=5)
+        self.entry_delay = tk.Entry(delay_frame, width=10, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, borderwidth=0, insertbackground=COLOR_ACCENT)
+        self.entry_delay.insert(0, "5")
+        self.entry_delay.pack(side="left")
         
-        self.entry_delay = tk.Entry(delay_frame, width=10, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
-        self.entry_delay.insert(0, "5"); self.entry_delay.pack(side="left", padx=10)
-
         tk.Button(self.tab_bot, text="DESPLEGAR SABANDIJA", bg=COLOR_ACCENT, fg="#000", 
-                 font=('Segoe UI', 12, 'bold'), relief="flat", command=self.agregar_estancia).pack(pady=15, fill="x", padx=30)
-
+                 font=('Segoe UI', 12, 'bold'), command=self.agregar_estancia).pack(pady=15, fill="x", padx=30)
+        
         frame_list = ttk.LabelFrame(self.tab_bot, text=" HUNTING LOG ", style="Card.TLabelframe")
         frame_list.pack(fill="both", expand=True, padx=15, pady=10)
         self.canvas = tk.Canvas(frame_list, bg=COLOR_BG, highlightthickness=0)
@@ -171,51 +187,63 @@ class App:
         self.listar_ventanas()
 
     def setup_tab_layout(self):
-        frame_resize = ttk.LabelFrame(self.tab_layout, text=" RECTIL ARCHITECTURE ", style="Card.TLabelframe")
-        frame_resize.pack(fill="both", expand=True, padx=15, pady=15)
+        frame_res = ttk.LabelFrame(self.tab_layout, text=" RECTIL ARCHITECTURE ", style="Card.TLabelframe")
+        frame_res.pack(fill="both", expand=True, padx=15, pady=15)
         
-        labels = ["ANCHO", "ALTO", "OFFSET X", "OFFSET Y"]
-        self.entries = {}; defaults = ["800", "600", "40", "0"]
+        tk.Label(frame_res, text="OPTIMIZACIÓN AUTOMÁTICA", bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 10, 'bold')).pack(pady=20)
         
-        for i, text in enumerate(labels):
-            tk.Label(frame_resize, text=text, bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 9, 'bold')).grid(row=i, column=0, padx=20, pady=15, sticky="w")
-            ent = tk.Entry(frame_resize, width=15, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, borderwidth=0, font=('Consolas', 11, 'bold'), insertbackground=COLOR_ACCENT)
-            ent.insert(0, defaults[i]); ent.grid(row=i, column=1, padx=10); self.entries[text] = ent
+        tk.Button(frame_res, text="AUTO AJUSTAR TODAS LAS VENTANAS", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 12, 'bold'), 
+                  command=self.auto_ajustar_grid).pack(pady=10, padx=40, fill="x")
+        
+        tk.Label(frame_res, text="* Organiza las ventanas de MIR4 en cuadrícula\nsegún el espacio disponible en pantalla.", 
+                 bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 8), justify="center").pack(pady=10)
 
-        tk.Button(frame_resize, text="SINCRONIZAR CASCADA", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 11, 'bold'), 
-                  relief="flat", command=self.organizar_ventanas).grid(row=5, column=0, columnspan=2, pady=30, padx=20, sticky="nsew")
-
-    def organizar_ventanas(self):
+    def auto_ajustar_grid(self):
+        """Ajusta automáticamente todas las ventanas detectadas de MIR4"""
         try:
-            target_w = int(self.entries["ANCHO"].get()); target_h = int(self.entries["ALTO"].get())
-            off_x = int(self.entries["OFFSET X"].get()); off_y = int(self.entries["OFFSET Y"].get())
-            cur_x, cur_y = 0, 0; v_list = []
-            win32gui.EnumWindows(lambda h, _: v_list.append(h) if win32gui.IsWindowVisible(h) and "MIR4G" in win32gui.GetWindowText(h).upper() else None, None)
+            v_list = []
+            win32gui.EnumWindows(lambda h, _: v_list.append(h) if win32gui.IsWindowVisible(h) and "MIR4" in win32gui.GetWindowText(h).upper() else None, None)
             v_list.sort()
-            for hwnd in v_list:
+            if not v_list: return
+            rect_trabajo = win32api.GetMonitorInfo(win32api.MonitorFromPoint((0,0)))['Work']
+            area_w, area_h = rect_trabajo[2] - rect_trabajo[0], rect_trabajo[3] - rect_trabajo[1]
+            cols = int(len(v_list)**0.5)
+            if cols * cols < len(v_list): cols += 1
+            rows = (len(v_list) + cols - 1) // cols
+            win_w, win_h = area_w // cols, area_h // rows
+            for i, hwnd in enumerate(v_list):
+                r, c = i // cols, i % cols
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                win32gui.MoveWindow(hwnd, cur_x, cur_y, target_w, target_h, True)
-                cur_x += off_x; cur_y += off_y
+                win32gui.MoveWindow(hwnd, rect_trabajo[0] + (c * win_w), rect_trabajo[1] + (r * win_h), win_w, win_h, True)
         except: pass
 
     def listar_ventanas(self):
         v = []
-        win32gui.EnumWindows(lambda h, _: v.append(f"{win32gui.GetWindowText(h)} (ID: {h})") if win32gui.IsWindowVisible(h) and win32gui.GetWindowText(h) else None, None)
+        def callback(h, _):
+            if win32gui.IsWindowVisible(h):
+                title = win32gui.GetWindowText(h)
+                if title.upper().startswith("MIR4"):
+                    v.append(f"{title} (ID: {h})")
+        win32gui.EnumWindows(callback, None)
         self.combo_ventanas['values'] = v
 
     def agregar_estancia(self):
         sel = self.combo_ventanas.get()
+        apodo = self.entry_apodo.get().strip().upper() or "S/N"
         if not sel: return
         try:
             hwnd = int(sel.split("(ID: ")[1].replace(")", ""))
             if hwnd in self.instances: return
-            usar_ulti_real = self.ulti_var.get() if self.modo_var.get() == "FARMA_EXP" else False
-            bot = BotInstance(hwnd, sel, self.modo_var.get(), float(self.entry_delay.get() or 5), usar_ulti=usar_ulti_real)
+            bot = BotInstance(hwnd, sel, self.modo_var.get(), float(self.entry_delay.get() or 5), usar_ulti=self.ulti_var.get(), apodo=apodo)
             self.instances[hwnd] = bot; bot.start()
-            f = tk.Frame(self.scrollable_frame, bg=COLOR_CARD, pady=5); f.pack(fill="x", pady=2, padx=5)
-            tk.Label(f, text=f"🐍 {self.modo_var.get()}", fg=COLOR_ACCENT, bg=COLOR_CARD, font=('Segoe UI', 8, 'bold')).pack(side="left", padx=5)
-            tk.Label(f, text=f"{sel[:25]}...", fg="#fff", bg=COLOR_CARD).pack(side="left")
-            tk.Button(f, text="EXPULSAR", bg="#441111", fg="white", font=('Segoe UI', 7, 'bold'), command=lambda h=hwnd, fr=f: [self.instances[h].stop(), self.instances.pop(h), fr.destroy()]).pack(side="right", padx=5)
+            f = tk.Frame(self.scrollable_frame, bg=COLOR_CARD, pady=5)
+            f.pack(fill="x", pady=2, padx=5)
+            tk.Label(f, text=f"[{apodo}]", fg=COLOR_SECONDARY, bg=COLOR_CARD, font=('Consolas', 9, 'bold'), width=12, anchor="w").pack(side="left", padx=5)
+            tk.Label(f, text=f"| {self.modo_var.get()}", fg=COLOR_ACCENT, bg=COLOR_CARD, font=('Segoe UI', 8, 'bold')).pack(side="left", padx=2)
+            tk.Button(f, text="X", bg="#441111", fg="white", font=('Segoe UI', 7, 'bold'), width=3,
+                      command=lambda h=hwnd, fr=f: [self.instances[h].stop(), self.instances.pop(h), fr.destroy()]).pack(side="right", padx=5)
+            tk.Label(f, text=f"| {sel[:20]}...", fg="#666", bg=COLOR_CARD, font=('Segoe UI', 7), anchor="w").pack(side="left", fill="x", expand=True, padx=2)
+            self.entry_apodo.delete(0, tk.END)
         except: pass
 
 if __name__ == "__main__":
@@ -223,13 +251,7 @@ if __name__ == "__main__":
         root = tk.Tk()
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
         icon_path = os.path.join(base_path, "sabandijab0tico.ico")
-        if os.path.exists(icon_path):
-            root.iconbitmap(icon_path)
-        try:
-            from ctypes import windll, byref, sizeof, c_int
-            hwnd_title = windll.user32.GetParent(root.winfo_id())
-            windll.dwmapi.DwmSetWindowAttribute(hwnd_title, 20, byref(c_int(1)), sizeof(c_int(1)))
-        except: pass
+        if os.path.exists(icon_path): root.iconbitmap(icon_path)
         App(root); root.mainloop()
     except Exception:
-        traceback.print_exc(); input("\nPresiona ENTER para cerrar...")
+        traceback.print_exc(); input()
