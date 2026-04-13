@@ -47,10 +47,15 @@ class BotInstance(threading.Thread):
         self.usar_ulti = usar_ulti
         self.apodo = apodo
         self.running = True
+        self.paused = False # Nueva bandera de pausa
         self.daemon = True
 
+    def toggle_pause(self):
+        self.paused = not self.paused
+        return self.paused
+
     def enviar_tecla(self, codigo_tecla):
-        if not self.running: return
+        if not self.running or self.paused: return
         win32api.PostMessage(self.hwnd, win32con.WM_KEYDOWN, codigo_tecla, 0)
         time.sleep(random.uniform(0.05, 0.1))
         win32api.PostMessage(self.hwnd, win32con.WM_KEYUP, codigo_tecla, 0)
@@ -58,24 +63,33 @@ class BotInstance(threading.Thread):
     def run(self):
         while self.running:
             try:
-                if self.modo == 'MISION_Q':
-                    teclas = [0x51, 0x45]; random.shuffle(teclas)
-                    for t in teclas: self.enviar_tecla(t); time.sleep(random.uniform(0.3, 0.5))
-                    for _ in range(3): self.enviar_tecla(0x54); time.sleep(0.25)
-                    rect = win32gui.GetWindowRect(self.hwnd)
-                    pos = win32api.MAKELONG((rect[2]-rect[0])//2, (rect[3]-rect[1])//2)
-                    for _ in range(5):
-                        win32gui.PostMessage(self.hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, pos)
-                        time.sleep(0.02); win32gui.PostMessage(self.hwnd, win32con.WM_LBUTTONUP, 0, pos)
-                        time.sleep(0.25)
-                
-                elif self.modo == 'FARMA_EXP':
-                    self.enviar_tecla(0x09); time.sleep(0.5)
-                    self.enviar_tecla(0x22); time.sleep(0.4)
-                    self.enviar_tecla(0x46)
-                    if self.usar_ulti:
-                        time.sleep(0.4)
-                        self.enviar_tecla(0x52) 
+                # Solo ejecuta acciones si no está pausado
+                if not self.paused:
+                    if self.modo == 'MISION_Q':
+                        teclas = [0x51, 0x45]; random.shuffle(teclas)
+                        for t in teclas: 
+                            if not self.running or self.paused: break
+                            self.enviar_tecla(t); time.sleep(random.uniform(0.3, 0.5))
+                        
+                        for _ in range(3): 
+                            if not self.running or self.paused: break
+                            self.enviar_tecla(0x54); time.sleep(0.25)
+                        
+                        rect = win32gui.GetWindowRect(self.hwnd)
+                        pos = win32api.MAKELONG((rect[2]-rect[0])//2, (rect[3]-rect[1])//2)
+                        for _ in range(5):
+                            if not self.running or self.paused: break
+                            win32gui.PostMessage(self.hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, pos)
+                            time.sleep(0.02); win32gui.PostMessage(self.hwnd, win32con.WM_LBUTTONUP, 0, pos)
+                            time.sleep(0.25)
+                    
+                    elif self.modo == 'FARMA_EXP':
+                        self.enviar_tecla(0x09); time.sleep(0.5)
+                        self.enviar_tecla(0x22); time.sleep(0.4)
+                        self.enviar_tecla(0x46)
+                        if self.usar_ulti:
+                            time.sleep(0.4)
+                            self.enviar_tecla(0x52) 
 
                 delay = self.delay_personalizado if self.modo == 'FARMA_EXP' else random.uniform(5, 10)
                 for _ in range(int(delay * 10)):
@@ -199,7 +213,6 @@ class App:
                  bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 8), justify="center").pack(pady=10)
 
     def auto_ajustar_grid(self):
-        """Ajusta automáticamente todas las ventanas detectadas de MIR4"""
         try:
             v_list = []
             win32gui.EnumWindows(lambda h, _: v_list.append(h) if win32gui.IsWindowVisible(h) and "MIR4" in win32gui.GetWindowText(h).upper() else None, None)
@@ -234,15 +247,38 @@ class App:
         try:
             hwnd = int(sel.split("(ID: ")[1].replace(")", ""))
             if hwnd in self.instances: return
+            
             bot = BotInstance(hwnd, sel, self.modo_var.get(), float(self.entry_delay.get() or 5), usar_ulti=self.ulti_var.get(), apodo=apodo)
             self.instances[hwnd] = bot; bot.start()
+            
             f = tk.Frame(self.scrollable_frame, bg=COLOR_CARD, pady=5)
             f.pack(fill="x", pady=2, padx=5)
-            tk.Label(f, text=f"[{apodo}]", fg=COLOR_SECONDARY, bg=COLOR_CARD, font=('Consolas', 9, 'bold'), width=12, anchor="w").pack(side="left", padx=5)
-            tk.Label(f, text=f"| {self.modo_var.get()}", fg=COLOR_ACCENT, bg=COLOR_CARD, font=('Segoe UI', 8, 'bold')).pack(side="left", padx=2)
+            
+            lbl_apodo = tk.Label(f, text=f"[{apodo}]", fg=COLOR_SECONDARY, bg=COLOR_CARD, font=('Consolas', 9, 'bold'), width=12, anchor="w")
+            lbl_apodo.pack(side="left", padx=5)
+            
+            lbl_modo = tk.Label(f, text=f"| {self.modo_var.get()}", fg=COLOR_ACCENT, bg=COLOR_CARD, font=('Segoe UI', 8, 'bold'))
+            lbl_modo.pack(side="left", padx=2)
+
+            # Lógica del botón de Pausa
+            def toggle_pause_ui(h=hwnd, label=lbl_modo):
+                is_paused = self.instances[h].toggle_pause()
+                if is_paused:
+                    btn_pause.config(text="▶", bg="#444411", fg=COLOR_SECONDARY)
+                    label.config(fg=COLOR_TEXT_OFF)
+                else:
+                    btn_pause.config(text="⏸", bg="#113311", fg=COLOR_ACCENT)
+                    label.config(fg=COLOR_ACCENT)
+
+            btn_pause = tk.Button(f, text="⏸", bg="#113311", fg=COLOR_ACCENT, font=('Segoe UI', 7, 'bold'), width=3,
+                                 command=toggle_pause_ui)
+            btn_pause.pack(side="right", padx=2)
+
             tk.Button(f, text="X", bg="#441111", fg="white", font=('Segoe UI', 7, 'bold'), width=3,
                       command=lambda h=hwnd, fr=f: [self.instances[h].stop(), self.instances.pop(h), fr.destroy()]).pack(side="right", padx=5)
-            tk.Label(f, text=f"| {sel[:20]}...", fg="#666", bg=COLOR_CARD, font=('Segoe UI', 7), anchor="w").pack(side="left", fill="x", expand=True, padx=2)
+            
+            tk.Label(f, text=f"| {sel[:15]}...", fg="#666", bg=COLOR_CARD, font=('Segoe UI', 7), anchor="w").pack(side="left", fill="x", expand=True, padx=2)
+            
             self.entry_apodo.delete(0, tk.END)
         except: pass
 
