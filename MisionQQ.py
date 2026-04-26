@@ -13,7 +13,7 @@ import traceback
 
 # --- IDENTIFICADOR ÚNICO DE APP ---
 try:
-    myappid = 'sabandijabot.reptil.v2'
+    myappid = 'sabandijabot.v2'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except:
     pass
@@ -47,7 +47,7 @@ class BotInstance(threading.Thread):
         self.usar_ulti = usar_ulti
         self.apodo = apodo
         self.running = True
-        self.paused = False # Nueva bandera de pausa
+        self.paused = False
         self.daemon = True
 
     def toggle_pause(self):
@@ -63,7 +63,6 @@ class BotInstance(threading.Thread):
     def run(self):
         while self.running:
             try:
-                # Solo ejecuta acciones si no está pausado
                 if not self.paused:
                     if self.modo == 'MISION_Q':
                         teclas = [0x51, 0x45]; random.shuffle(teclas)
@@ -89,10 +88,15 @@ class BotInstance(threading.Thread):
                         self.enviar_tecla(0x46)
                         if self.usar_ulti:
                             time.sleep(0.4)
-                            self.enviar_tecla(0x52) 
+                            self.enviar_tecla(0x52)
 
-                delay = self.delay_personalizado if self.modo == 'FARMA_EXP' else random.uniform(5, 10)
-                for _ in range(int(delay * 10)):
+                    elif self.modo == 'CORRE_RAPIDO':
+                        self.enviar_tecla(0x54)
+
+                delay = self.delay_personalizado if self.modo in ['FARMA_EXP', 'CORRE_RAPIDO'] else random.uniform(5, 10)
+                delay_final = delay * random.uniform(0.9, 1.1)
+                
+                for _ in range(int(delay_final * 10)):
                     if not self.running: break
                     time.sleep(0.1)
             except: self.running = False
@@ -102,7 +106,7 @@ class BotInstance(threading.Thread):
 class App:
     def __init__(self, root):
         self.root = root
-        self.root.title("SABANDIJA B0T - REPTIL EDITION")
+        self.root.title("SABANDIJA B0T")
         self.root.geometry("600x850")
         self.root.configure(bg=COLOR_BG)
         self.instances = {}
@@ -123,7 +127,7 @@ class App:
         self.notebook.pack(fill="both", expand=True, padx=10, pady=5)
         self.tab_bot = ttk.Frame(self.notebook); self.tab_layout = ttk.Frame(self.notebook)
         self.notebook.add(self.tab_bot, text="  SABANDIJA INSTANCES  ")
-        self.notebook.add(self.tab_layout, text="  RECTIL LAYOUT  ")
+        self.notebook.add(self.tab_layout, text="  ORDERNAR VENTANAS  ")
         
         self.setup_tab_bot()
         self.setup_tab_layout()
@@ -145,17 +149,22 @@ class App:
         return f"v2.0.{version}"
 
     def update_radio_colors(self):
-        if self.modo_var.get() == "MISION_Q":
+        modo = self.modo_var.get()
+        self.rb_mision.configure(fg=COLOR_TEXT_OFF)
+        self.rb_farma.configure(fg=COLOR_TEXT_OFF)
+        self.rb_corre.configure(fg=COLOR_TEXT_OFF)
+        self.check_ulti.configure(state="disabled", fg=COLOR_TEXT_OFF)
+
+        if modo == "MISION_Q":
             self.rb_mision.configure(fg=COLOR_TEXT_ON)
-            self.rb_farma.configure(fg=COLOR_TEXT_OFF)
-            self.check_ulti.configure(state="disabled", fg=COLOR_TEXT_OFF)
-        else:
-            self.rb_mision.configure(fg=COLOR_TEXT_OFF)
+        elif modo == "FARMA_EXP":
             self.rb_farma.configure(fg=COLOR_TEXT_ON)
             self.check_ulti.configure(state="normal", fg=COLOR_SECONDARY)
+        elif modo == "CORRE_RAPIDO":
+            self.rb_corre.configure(fg=COLOR_TEXT_ON)
 
     def setup_tab_bot(self):
-        frame_sel = ttk.LabelFrame(self.tab_bot, text=" RECTIL TARGET ", style="Card.TLabelframe")
+        frame_sel = ttk.LabelFrame(self.tab_bot, text=" SELECCIONA VENTANA ", style="Card.TLabelframe")
         frame_sel.pack(fill="x", padx=15, pady=10)
         self.combo_ventanas = ttk.Combobox(frame_sel, state="readonly", width=40)
         self.combo_ventanas.pack(pady=5, padx=10)
@@ -172,12 +181,19 @@ class App:
         frame_cfg = ttk.LabelFrame(self.tab_bot, text=" MODO DE CAZA ", style="Card.TLabelframe")
         frame_cfg.pack(fill="x", padx=15, pady=10)
         self.modo_var = tk.StringVar(value="MISION_Q")
+        
         self.rb_mision = tk.Radiobutton(frame_cfg, text="MISIÓN Q (AUTO)", variable=self.modo_var, value="MISION_Q", 
                                        bg=COLOR_BG, fg=COLOR_TEXT_ON, selectcolor="#000", command=self.update_radio_colors)
         self.rb_mision.pack(anchor="w", padx=20)
+        
         self.rb_farma = tk.Radiobutton(frame_cfg, text="FARMA EXP (AFK)", variable=self.modo_var, value="FARMA_EXP", 
                                       bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", command=self.update_radio_colors)
         self.rb_farma.pack(anchor="w", padx=20)
+
+        self.rb_corre = tk.Radiobutton(frame_cfg, text="CORRE RÁPIDO (T)", variable=self.modo_var, value="CORRE_RAPIDO", 
+                                      bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", command=self.update_radio_colors)
+        self.rb_corre.pack(anchor="w", padx=20)
+        
         self.check_ulti = tk.Checkbutton(frame_cfg, text="LANZAR ULTI [R]", variable=self.ulti_var,
                                         bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", state="disabled")
         self.check_ulti.pack(anchor="w", padx=40)
@@ -189,7 +205,7 @@ class App:
         self.entry_delay.insert(0, "5")
         self.entry_delay.pack(side="left")
         
-        tk.Button(self.tab_bot, text="DESPLEGAR SABANDIJA", bg=COLOR_ACCENT, fg="#000", 
+        tk.Button(self.tab_bot, text="DESPLEGAR AL SABANDIJA", bg=COLOR_ACCENT, fg="#000", 
                  font=('Segoe UI', 12, 'bold'), command=self.agregar_estancia).pack(pady=15, fill="x", padx=30)
         
         frame_list = ttk.LabelFrame(self.tab_bot, text=" HUNTING LOG ", style="Card.TLabelframe")
@@ -201,7 +217,7 @@ class App:
         self.listar_ventanas()
 
     def setup_tab_layout(self):
-        frame_res = ttk.LabelFrame(self.tab_layout, text=" RECTIL ARCHITECTURE ", style="Card.TLabelframe")
+        frame_res = ttk.LabelFrame(self.tab_layout, text=" AJUSTE DE VENTANAS ", style="Card.TLabelframe")
         frame_res.pack(fill="both", expand=True, padx=15, pady=15)
         
         tk.Label(frame_res, text="OPTIMIZACIÓN AUTOMÁTICA", bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 10, 'bold')).pack(pady=20)
@@ -214,20 +230,26 @@ class App:
 
     def auto_ajustar_grid(self):
         try:
+            offset = 8
             v_list = []
             win32gui.EnumWindows(lambda h, _: v_list.append(h) if win32gui.IsWindowVisible(h) and "MIR4" in win32gui.GetWindowText(h).upper() else None, None)
             v_list.sort()
             if not v_list: return
             rect_trabajo = win32api.GetMonitorInfo(win32api.MonitorFromPoint((0,0)))['Work']
-            area_w, area_h = rect_trabajo[2] - rect_trabajo[0], rect_trabajo[3] - rect_trabajo[1]
+            area_x, area_y = rect_trabajo[0], rect_trabajo[1]
+            area_w, area_h = rect_trabajo[2] - area_x, rect_trabajo[3] - area_y
             cols = int(len(v_list)**0.5)
             if cols * cols < len(v_list): cols += 1
             rows = (len(v_list) + cols - 1) // cols
             win_w, win_h = area_w // cols, area_h // rows
             for i, hwnd in enumerate(v_list):
                 r, c = i // cols, i % cols
+                x = area_x + (c * win_w) - offset
+                y = area_y + (r * win_h)
+                ancho = win_w + (offset * 2)
+                alto = win_h + offset
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                win32gui.MoveWindow(hwnd, rect_trabajo[0] + (c * win_w), rect_trabajo[1] + (r * win_h), win_w, win_h, True)
+                win32gui.MoveWindow(hwnd, x, y, ancho, alto, True)
         except: pass
 
     def listar_ventanas(self):
@@ -260,7 +282,6 @@ class App:
             lbl_modo = tk.Label(f, text=f"| {self.modo_var.get()}", fg=COLOR_ACCENT, bg=COLOR_CARD, font=('Segoe UI', 8, 'bold'))
             lbl_modo.pack(side="left", padx=2)
 
-            # Lógica del botón de Pausa
             def toggle_pause_ui(h=hwnd, label=lbl_modo):
                 is_paused = self.instances[h].toggle_pause()
                 if is_paused:
