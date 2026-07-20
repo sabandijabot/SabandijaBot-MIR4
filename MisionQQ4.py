@@ -198,6 +198,17 @@ class App:
         self.root.geometry("780x720") 
         self.root.minsize(600, 500)   
         self.root.configure(bg=COLOR_BG)
+             # Cargar el ícono para la ventana de la app
+        try:
+            if getattr(sys, 'frozen', False):
+                # Si es un .exe, busca el ícono en la carpeta temporal de descompresión
+                icon_path = os.path.join(sys._MEIPASS, "sabandijab0tico.ico")
+            else:
+                # Si es un .py, busca en la misma carpeta
+                icon_path = "sabandijab0tico.ico"
+            self.root.iconbitmap(icon_path)
+        except Exception:
+            pass
 
         self.instancias_activas = {}
         self.ulti_var = tk.BooleanVar(value=False)
