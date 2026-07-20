@@ -1,0 +1,14 @@
+# Archivos de compilación de PyInstaller (carpetas pesadas y temporales)
+build/
+*.spec
+
+# Archivos de configuración local (para no subir tus rutas personales a la nube)
+config.json
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Archivos de sistema
+Thumbs.db
+.DS_Store
