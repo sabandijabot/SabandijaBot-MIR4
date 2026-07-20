@@ -23,13 +23,13 @@ pip install -r requirements.txt
 Para generar el archivo ejecutable independiente:
 
 ```bash
-py -m PyInstaller --noconsole --onefile --uac-admin --icon=sabandijab0tico.ico MisionQQ3.py
+py -m PyInstaller --noconsole --onefile --uac-admin --icon=sabandijab0tico.ico MisionQQ4.py
 
 ```
 
 ## ⚙️ Uso
 
-1. Ejecuta `MisionQQ3.py` o el `.exe` compilado como **Administrador**.
+1. Ejecuta `MisionQQ4.py` o el `.exe` compilado como **Administrador**.
 2. Configura las rutas de tu launcher y las coordenadas de inicio en la pestaña **Despliegue**.
 3. Selecciona la ventana del juego, define el modo de bot y haz clic en **Desplegar**.
 
