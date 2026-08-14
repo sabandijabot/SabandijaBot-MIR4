@@ -6,15 +6,19 @@ from tkinter import ttk
 import win32gui
 import win32con
 import win32api
+import win32process
 import time
 import random
 import threading
 import subprocess
 import json
+import shutil
+import tempfile
 from datetime import datetime
 
 # --- CONFIGURACIÓN GLOBAL ---
-APP_VERSION = "v14.2" # Versión actualizada con CRUD
+APP_VERSION = "v14.4" # Versión actualizada con CRUD
+RESERVED_CONFIG_SECTIONS = {"RUTAS", "LAUNCHER", "LAYOUT"}
 
 # --- VERIFICAR DEPENDENCIA UIAUTOMATION ---
 try:
@@ -57,6 +61,43 @@ def esperar_ventana(identificador_buscado, timeout=60):
         time.sleep(0.5)
     return None
 
+
+def obtener_ventanas_mir4():
+    ventanas = []
+
+    def callback(hwnd, _):
+        if es_ventana_mir4(hwnd):
+            ventanas.append(hwnd)
+        return True
+
+    win32gui.EnumWindows(callback, None)
+    return ventanas
+
+
+def es_ventana_mir4(hwnd):
+    """Valida que la ventana sea del juego y no solo tenga MIR4 en el título."""
+    if not win32gui.IsWindowVisible(hwnd):
+        return False
+    if "MIR4" not in win32gui.GetWindowText(hwnd).upper():
+        return False
+
+    proceso = None
+    try:
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        proceso = win32api.OpenProcess(
+            win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ,
+            False,
+            pid,
+        )
+        ruta_proceso = win32process.GetModuleFileNameEx(proceso, 0)
+        return os.path.basename(ruta_proceso).lower() in MIR4_GAME_PROCESS_NAMES
+    except Exception:
+        return False
+    finally:
+        if proceso:
+            win32api.CloseHandle(proceso)
+
+
 def enviar_clic_ventana(hwnd, x, y):
     if not hwnd: return False
     placement = win32gui.GetWindowPlacement(hwnd)
@@ -81,6 +122,15 @@ COLOR_CAPTURA = "#ff0000"
 
 COLOR_DISABLED_BG = "#1a1a1a"
 COLOR_DISABLED_FG = "#555555"
+
+MIR4_GAME_PROCESS_NAMES = {
+    "mir4.exe",
+    "mir4g.exe",
+    "mir4gclient.exe",
+    "mir4s.exe",
+    "mir4-win64-shipping.exe",
+    "mir4g-win64-shipping.exe",
+}
 
 # --- CLASE FRAME CON SCROLL ---
 class ScrollableFrame(ttk.Frame):
@@ -195,8 +245,8 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title(f"SABANDIJA B0T - EDITION {APP_VERSION}")
-        self.root.geometry("780x720") 
-        self.root.minsize(600, 500)   
+        self.root.geometry("640x590")
+        self.root.minsize(520, 440)
         self.root.configure(bg=COLOR_BG)
              # Cargar el ícono para la ventana de la app
         try:
@@ -225,68 +275,81 @@ class App:
         self.config = {}
 
         # --- CARGA / CREACIÓN DE JSON ---
-        if not os.path.exists(self.config_file):
-            self.config = {
-                'RUTAS': {'steam': r"C:\Program Files (x86)\Steam\steam.exe"},
-                'LAUNCHER': {
-                    'ruta': r"C:\Wemade\Mir4Global\Mir4Launcher\Mir4Launcher.exe",
-                    'g1_x': 815, 'g1_y': 539, 'g2_x': 968, 'g2_y': 541,
-                    'titulo': "CLASS:HwndWrapper[Mir4Launcher.exe",
-                    'delay_pre_click': 15, 'delay': 15
-                },
-                'LAYOUT': {'offset': 0}
-            }
-            self.guardar_config()
-        else:
-            try:
-                with open(self.config_file, 'r', encoding='utf-8') as f:
-                    self.config = json.load(f)
-            except Exception as e:
-                print(f"Error cargando JSON: {e}")
-                self.config = {}
-
-        if 'RUTAS' not in self.config:
-            self.config['RUTAS'] = {'steam': r"C:\Program Files (x86)\Steam\steam.exe"}
-            self.guardar_config()
-        if 'LAUNCHER' not in self.config:
-            self.config['LAUNCHER'] = {
+        defaults = {
+            'RUTAS': {'steam': r"C:\Program Files (x86)\Steam\steam.exe"},
+            'LAUNCHER': {
                 'ruta': r"C:\Wemade\Mir4Global\Mir4Launcher\Mir4Launcher.exe",
                 'g1_x': 815, 'g1_y': 539, 'g2_x': 968, 'g2_y': 541,
                 'titulo': "CLASS:HwndWrapper[Mir4Launcher.exe",
                 'delay_pre_click': 15, 'delay': 15
+            },
+            'LAYOUT': {
+                'offset': 0,
+                'fixed_width': 800,
+                'fixed_height': 450,
+                'columns': 2,
+                'rows': 2,
             }
-            self.guardar_config()
-        if 'LAYOUT' not in self.config:
-            self.config['LAYOUT'] = {'offset': 0}
+        }
+        config_necesita_guardado = False
+
+        if not os.path.exists(self.config_file):
+            self.config = {}
+            config_necesita_guardado = True
+        else:
+            try:
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    self.config = json.load(f)
+                if not isinstance(self.config, dict):
+                    raise ValueError("La configuración debe ser un objeto JSON")
+            except Exception as e:
+                print(f"Error cargando JSON: {e}")
+                try:
+                    shutil.copy2(self.config_file, self.config_file + ".corrupt")
+                    print(f"Copia de seguridad de configuración corrupta: {self.config_file}.corrupt")
+                except OSError as backup_error:
+                    print(f"No se pudo respaldar la configuración corrupta: {backup_error}")
+                self.config = {}
+                config_necesita_guardado = True
+
+        for section, default_value in defaults.items():
+            if section not in self.config or not isinstance(self.config[section], dict):
+                self.config[section] = default_value.copy()
+                config_necesita_guardado = True
+
+        if config_necesita_guardado:
             self.guardar_config()
 
         self.style = ttk.Style()
         self.style.theme_use('clam')
         self.style.configure("TNotebook", background=COLOR_BG, borderwidth=0)
-        self.style.configure("TNotebook.Tab", background=COLOR_CARD, foreground=COLOR_TEXT_OFF, padding=[12, 6], font=('Segoe UI', 10, 'bold'))
+        self.style.configure("TNotebook.Tab", background=COLOR_CARD, foreground=COLOR_TEXT_OFF, padding=[8, 4], font=('Segoe UI', 9, 'bold'))
         self.style.map("TNotebook.Tab", background=[("selected", COLOR_ACCENT)], foreground=[("selected", "#000")])
         self.style.configure("TFrame", background=COLOR_BG)
         self.style.configure("Card.TLabelframe", background=COLOR_BG, foreground=COLOR_ACCENT, bordercolor=COLOR_ACCENT)
         self.style.configure("Card.TLabelframe.Label", background=COLOR_BG, foreground=COLOR_ACCENT, font=('Consolas', 10, 'bold'))
-        self.style.configure("Treeview", background=COLOR_CARD, foreground="#fff", fieldbackground=COLOR_CARD, rowheight=24, font=('Segoe UI', 9))
-        self.style.configure("Treeview.Heading", background=COLOR_INPUT_BG, foreground=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'))
+        self.style.configure("Treeview", background=COLOR_CARD, foreground="#fff", fieldbackground=COLOR_CARD, rowheight=20, font=('Segoe UI', 8))
+        self.style.configure("Treeview.Heading", background=COLOR_INPUT_BG, foreground=COLOR_ACCENT, font=('Segoe UI', 8, 'bold'))
         self.style.map("Treeview", background=[("selected", COLOR_ACCENT)], foreground=[("selected", "#000")])
 
         header_frame = tk.Frame(self.root, bg=COLOR_BG)
-        header_frame.pack(fill="x", pady=5)
-        tk.Label(header_frame, text="🐍 SABANDIJA CONTROL", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Impact', 24)).pack()
+        header_frame.pack(fill="x", pady=3)
+        tk.Label(header_frame, text="🐍 SABANDIJA CONTROL", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Impact', 18)).pack()
 
         self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill="both", expand=True, padx=10, pady=5)
+        self.notebook.pack(fill="both", expand=True, padx=6, pady=3)
 
         self.tab_bot = ttk.Frame(self.notebook)
         self.tab_layout = ttk.Frame(self.notebook)
         self.tab_despliegue = ttk.Frame(self.notebook)
+        self.tab_log = ttk.Frame(self.notebook)
 
         self.notebook.add(self.tab_bot, text="  SABANDIJA INSTANCES  ")
         self.notebook.add(self.tab_layout, text="  RECTIL LAYOUT  ")
         self.notebook.add(self.tab_despliegue, text="  DESPLIEGUE  ")
+        self.notebook.add(self.tab_log, text="  HUNTING LOG  ")
 
+        self.setup_tab_log()
         self.setup_tab_bot()
         self.setup_tab_layout()
         self.setup_tab_despliegue()
@@ -394,33 +457,33 @@ class App:
 
         # 1. LISTA DE PERFILES E INSTANCIAS (READ)
         frame_lista = ttk.LabelFrame(container, text=" 📋 INSTANCIAS Y PERFILES GUARDADOS ", style="Card.TLabelframe")
-        frame_lista.pack(fill="x", padx=15, pady=5)
+        frame_lista.pack(fill="x", padx=10, pady=3)
         
-        self.tabla_instancias = ttk.Treeview(frame_lista, columns=("apodo", "modo", "ventana", "delay", "estado"), show="headings", height=6)
-        for col, txt, w in [("apodo","Apodo",120), ("modo","Modo",110), ("ventana","Ventana Asignada",180), ("delay","Delay",60), ("estado","Estado",110)]:
+        self.tabla_instancias = ttk.Treeview(frame_lista, columns=("apodo", "modo", "ventana", "delay", "estado"), show="headings", height=5)
+        for col, txt, w in [("apodo","Apodo",100), ("modo","Modo",95), ("ventana","Ventana Asignada",150), ("delay","Delay",55), ("estado","Estado",95)]:
             self.tabla_instancias.heading(col, text=txt); self.tabla_instancias.column(col, width=w, anchor="center")
         self.tabla_instancias.pack(fill="x", padx=5, pady=5)
         self.tabla_instancias.bind("<<TreeviewSelect>>", self.cargar_datos_seleccionados)
 
         # 2. FORMULARIO DE EDICIÓN (CREATE / UPDATE)
         frame_form = ttk.LabelFrame(container, text=" 🛠️ CONFIGURACIÓN DEL PERFIL ", style="Card.TLabelframe")
-        frame_form.pack(fill="x", padx=15, pady=5)
+        frame_form.pack(fill="x", padx=10, pady=3)
         
         self.modo_var = tk.StringVar(value="MISION_Q")
 
         # Fila 1: Apodo y Ventana
-        f1 = tk.Frame(frame_form, bg=COLOR_BG); f1.pack(fill="x", padx=15, pady=5)
+        f1 = tk.Frame(frame_form, bg=COLOR_BG); f1.pack(fill="x", padx=10, pady=3)
         tk.Label(f1, text="APODO:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=10).pack(side="left")
-        self.entry_apodo = tk.Entry(f1, width=15, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Segoe UI', 10))
+        self.entry_apodo = tk.Entry(f1, width=12, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Segoe UI', 9))
         self.entry_apodo.pack(side="left", padx=5)
         
         tk.Label(f1, text="VENTANA:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=10).pack(side="left", padx=(10,0))
-        self.combo_ventanas = ttk.Combobox(f1, state="readonly", width=30, font=('Segoe UI', 9))
+        self.combo_ventanas = ttk.Combobox(f1, state="readonly", width=24, font=('Segoe UI', 9))
         self.combo_ventanas.pack(side="left", padx=5, fill="x", expand=True)
         tk.Button(f1, text="🔄", bg=COLOR_CARD, fg=COLOR_ACCENT, relief="groove", command=self.actualizar_combo).pack(side="left", padx=2)
 
         # Fila 2: Modos
-        f2 = tk.Frame(frame_form, bg=COLOR_BG); f2.pack(fill="x", padx=15, pady=2)
+        f2 = tk.Frame(frame_form, bg=COLOR_BG); f2.pack(fill="x", padx=10, pady=1)
         def on_mode_change():
             self.actualizar_radio_colores()
         self.rb_mision = tk.Radiobutton(f2, text="MISIÓN Q", variable=self.modo_var, value="MISION_Q", bg=COLOR_BG, fg=COLOR_TEXT_ON, selectcolor="#000", font=('Segoe UI', 9, 'bold'), command=on_mode_change)
@@ -431,7 +494,7 @@ class App:
         self.rb_summon.pack(side="left", padx=5)
 
         # Fila 3: Delay y Ulti
-        f3 = tk.Frame(frame_form, bg=COLOR_BG); f3.pack(fill="x", padx=15, pady=5)
+        f3 = tk.Frame(frame_form, bg=COLOR_BG); f3.pack(fill="x", padx=10, pady=3)
         tk.Label(f3, text="DELAY (SEG):", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
         self.entry_delay = tk.Entry(f3, width=5, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
         self.entry_delay.insert(0, "5"); self.entry_delay.pack(side="left", padx=5)
@@ -439,40 +502,35 @@ class App:
         self.check_ulti.pack(side="left", padx=15)
 
         # Botones CRUD
-        btn_crud_frame = tk.Frame(frame_form, bg=COLOR_BG); btn_crud_frame.pack(fill="x", padx=15, pady=5)
-        tk.Button(btn_crud_frame, text="🆕 NUEVO", bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 9, 'bold'), relief="groove", command=self.limpiar_formulario).pack(side="left", fill="x", expand=True, padx=2)
-        tk.Button(btn_crud_frame, text="💾 GUARDAR / ACTUALIZAR", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 9, 'bold'), relief="flat", command=self.guardar_o_actualizar_perfil).pack(side="left", fill="x", expand=True, padx=2)
-        tk.Button(btn_crud_frame, text="🗑️ ELIMINAR", bg="#330000", fg="#ff0000", font=('Segoe UI', 9, 'bold'), relief="groove", command=self.eliminar_perfil_seleccionado).pack(side="left", fill="x", expand=True, padx=2)
+        btn_crud_frame = tk.Frame(frame_form, bg=COLOR_BG); btn_crud_frame.pack(fill="x", padx=10, pady=3)
+        tk.Button(btn_crud_frame, text="🆕 NUEVO", bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 8, 'bold'), relief="groove", command=self.limpiar_formulario).pack(side="left", fill="x", expand=True, padx=2)
+        tk.Button(btn_crud_frame, text="💾 GUARDAR / ACTUALIZAR", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.guardar_o_actualizar_perfil).pack(side="left", fill="x", expand=True, padx=2)
+        tk.Button(btn_crud_frame, text="🗑️ ELIMINAR", bg="#330000", fg="#ff0000", font=('Segoe UI', 8, 'bold'), relief="groove", command=self.eliminar_perfil_seleccionado).pack(side="left", fill="x", expand=True, padx=2)
 
         # 3. CONTROL DE EJECUCIÓN
         frame_exec = ttk.LabelFrame(container, text=" 🎮 CONTROL DE EJECUCIÓN ", style="Card.TLabelframe")
-        frame_exec.pack(fill="x", padx=15, pady=5)
+        frame_exec.pack(fill="x", padx=10, pady=3)
         
-        btn_exec_frame = tk.Frame(frame_exec, bg=COLOR_BG); btn_exec_frame.pack(pady=5, fill="x", padx=10)
+        btn_exec_frame = tk.Frame(frame_exec, bg=COLOR_BG); btn_exec_frame.pack(pady=3, fill="x", padx=8)
 
-        self.btn_iniciar = tk.Button(btn_exec_frame, text="🚀 INICIAR BOT", font=('Segoe UI', 9, 'bold'), relief="flat", command=self.iniciar_instancia)
+        self.btn_iniciar = tk.Button(btn_exec_frame, text="🚀 INICIAR BOT", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.iniciar_instancia)
         self.btn_iniciar.pack(side="left", fill="x", expand=True, padx=2)
 
-        self.btn_pausar = tk.Button(btn_exec_frame, text="⏸️ PAUSAR", font=('Segoe UI', 9, 'bold'), relief="flat", command=self.pausar_instancia)
+        self.btn_pausar = tk.Button(btn_exec_frame, text="⏸️ PAUSAR", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.pausar_instancia)
         self.btn_pausar.pack(side="left", fill="x", expand=True, padx=2)
 
-        self.btn_reanudar = tk.Button(btn_exec_frame, text="▶️ REANUDAR", font=('Segoe UI', 9, 'bold'), relief="flat", command=self.reanudar_instancia)
+        self.btn_reanudar = tk.Button(btn_exec_frame, text="▶️ REANUDAR", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.reanudar_instancia)
         self.btn_reanudar.pack(side="left", fill="x", expand=True, padx=2)
 
-        self.btn_detener = tk.Button(btn_exec_frame, text="🛑 DETENER", font=('Segoe UI', 9, 'bold'), relief="flat", command=self.detener_instancia)
+        self.btn_detener = tk.Button(btn_exec_frame, text="🛑 DETENER", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.detener_instancia)
         self.btn_detener.pack(side="left", fill="x", expand=True, padx=2)
 
-        # 4. PANICO Y LOG
+        # 4. PANICO
         btn_panico = tk.Button(container, text="☠️ BOTÓN DE PÁNICO (CERRAR TODO MIR4) ☠️",
                                bg="#cc0000", fg="#ffffff", font=('Segoe UI', 9, 'bold'), 
                                relief="flat", activebackground="#ff3333", 
-                               pady=4, command=self.boton_de_panico)
-        btn_panico.pack(fill="x", padx=15, pady=(5, 5))
-
-        frame_log = ttk.LabelFrame(container, text=" HUNTING LOG ", style="Card.TLabelframe")
-        frame_log.pack(fill="both", expand=True, padx=15, pady=5)
-        self.txt_log = tk.Text(frame_log, bg="#020502", fg=COLOR_ACCENT, font=('Consolas', 9), state='disabled', borderwidth=0, height=8)
-        self.txt_log.pack(fill="both", expand=True, padx=5, pady=5)
+                               pady=3, command=self.boton_de_panico)
+        btn_panico.pack(fill="x", padx=10, pady=(3, 3))
 
         self.actualizar_combo()
         self.actualizar_tabla_visual()
@@ -485,6 +543,20 @@ class App:
             self.log_status(f"📁 Archivo de configuración JSON ubicado en:\n   {ruta_abs_json}")
         else:
             self.log_status(f"⚠️ No se encontró el archivo JSON. Se creará en:\n   {ruta_abs_json}")
+
+    def setup_tab_log(self):
+        frame_log = ttk.LabelFrame(self.tab_log, text=" HUNTING LOG ", style="Card.TLabelframe")
+        frame_log.pack(fill="both", expand=True, padx=10, pady=10)
+        self.txt_log = tk.Text(
+            frame_log,
+            bg="#020502",
+            fg=COLOR_ACCENT,
+            font=('Consolas', 8),
+            state='disabled',
+            borderwidth=0,
+            height=5,
+        )
+        self.txt_log.pack(fill="both", expand=True, padx=5, pady=5)
 
     # --- LÓGICA CRUD ---
     def limpiar_formulario(self):
@@ -543,6 +615,9 @@ class App:
         apodo = self.entry_apodo.get().strip()
         if not apodo:
             self.mostrar_alerta("Atención", "Debes ingresar un APODO\npara guardar el perfil.")
+            return
+        if apodo in RESERVED_CONFIG_SECTIONS:
+            self.mostrar_alerta("Atención", f"[{apodo}] es un nombre reservado\nde configuración y no puede usarse como perfil.")
             return
 
         # Si el bot está corriendo, actualizamos en caliente
@@ -638,7 +713,7 @@ class App:
     def actualizar_combo(self):
         ventanas = []
         def enum_windows_proc(hwnd, lParam):
-            if win32gui.IsWindowVisible(hwnd) and "Mir4G" in win32gui.GetWindowText(hwnd): ventanas.append(f"{win32gui.GetWindowText(hwnd)} (HWND: {hwnd})")
+            if es_ventana_mir4(hwnd): ventanas.append(f"{win32gui.GetWindowText(hwnd)} (HWND: {hwnd})")
             return True
         win32gui.EnumWindows(enum_windows_proc, None)
         self.combo_ventanas['values'] = ventanas
@@ -748,71 +823,192 @@ class App:
     # --- TAB LAYOUT ---
     def setup_tab_layout(self):
         frame_grid = ttk.LabelFrame(self.tab_layout, text=" RECTIL WINDOWS LAYOUT (GRID) ", style="Card.TLabelframe")
-        frame_grid.pack(fill="both", expand=True, padx=15, pady=15)
-        
-        saved_offset = self.config.get('LAYOUT', {}).get('offset', 0)
-        
+        frame_grid.pack(fill="both", expand=True, padx=10, pady=10)
+
+        layout_config = self.config.get('LAYOUT', {})
+        saved_offset = layout_config.get('offset', 0)
+
         self.label_offset = ttk.Label(frame_grid, text=f"Ajuste de Borde (Offset): {saved_offset}", background=COLOR_BG, foreground=COLOR_ACCENT, font=('Segoe UI', 10, 'bold'))
-        self.label_offset.pack(pady=15)
-        
+        self.label_offset.pack(pady=8)
+
         self.offset_var = tk.IntVar(value=saved_offset)
-        
+
         def on_offset_change(v):
             val = int(float(v))
             self.label_offset.config(text=f"Ajuste de Borde (Offset): {val}")
             if 'LAYOUT' not in self.config: self.config['LAYOUT'] = {}
             self.config['LAYOUT']['offset'] = val
             self.guardar_config()
-            
+
         self.slider = ttk.Scale(frame_grid, from_=0, to=20, orient='horizontal', variable=self.offset_var, command=on_offset_change)
         self.slider.pack(fill="x", padx=30, pady=10)
-        
-        tk.Button(frame_grid, text="⚡ ORDENAR Y ENFOCAR VENTANAS", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 12, 'bold'), relief="flat", activebackground=COLOR_SECONDARY, command=self.ordenar_grid_ventanas).pack(pady=(40, 10), fill="x", padx=40)
-        tk.Button(frame_grid, text="⬇️ MINIMIZAR TODAS LAS VENTANAS", bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 12, 'bold'), relief="flat", activebackground=COLOR_DISABLED_FG, command=self.minimizar_grid_ventanas).pack(pady=(0, 40), fill="x", padx=40)
 
-    def ordenar_grid_ventanas(self):
-        v_list = []
-        def cb(hwnd, extra):
-            if win32gui.IsWindowVisible(hwnd) and "MIR4G" in win32gui.GetWindowText(hwnd).upper(): v_list.append(hwnd)
-            return True
-        win32gui.EnumWindows(cb, None); v_list.sort()
-        if not v_list: 
-            self.log_status("⚠️ No hay ventanas Mir4G."); return
-        
-        rect = win32api.GetMonitorInfo(win32api.MonitorFromPoint((0, 0)))['Work']
-        w_x, w_y, w_w, w_h = rect[0], rect[1], rect[2]-rect[0], rect[3]-rect[1]
-        num = len(v_list); cols = int(num**0.5)
-        if cols * cols < num: cols += 1
-        rows = (num + cols - 1) // cols; win_w = w_w // cols; win_h = w_h // rows; offset = self.offset_var.get()
-        
-        if 'LAYOUT' not in self.config: self.config['LAYOUT'] = {}
-        self.config['LAYOUT']['offset'] = offset
-        self.guardar_config()
-        
+        frame_fixed = ttk.LabelFrame(frame_grid, text=" TAMAÑO FIJO ", style="Card.TLabelframe")
+        frame_fixed.pack(fill="x", padx=15, pady=(2, 5))
+        fixed_row = tk.Frame(frame_fixed, bg=COLOR_BG)
+        fixed_row.pack(fill="x", padx=8, pady=5)
+
+        tk.Label(fixed_row, text="ANCHO:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        self.entry_layout_width = tk.Entry(fixed_row, width=7, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
+        self.entry_layout_width.insert(0, str(layout_config.get('fixed_width', 800)))
+        self.entry_layout_width.pack(side="left", padx=(4, 12))
+
+        tk.Label(fixed_row, text="ALTO:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        self.entry_layout_height = tk.Entry(fixed_row, width=7, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
+        self.entry_layout_height.insert(0, str(layout_config.get('fixed_height', 450)))
+        self.entry_layout_height.pack(side="left", padx=(4, 12))
+
+        tk.Button(fixed_row, text="APLICAR TAMAÑO FIJO", bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 8, 'bold'), relief="groove", command=self.aplicar_tamano_fijo).pack(side="left", fill="x", expand=True)
+
+        frame_custom = ttk.LabelFrame(frame_grid, text=" DISTRIBUCIÓN PERSONALIZADA ", style="Card.TLabelframe")
+        frame_custom.pack(fill="x", padx=15, pady=5)
+        custom_row = tk.Frame(frame_custom, bg=COLOR_BG)
+        custom_row.pack(fill="x", padx=8, pady=5)
+
+        tk.Label(custom_row, text="COLUMNAS:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        self.entry_layout_columns = tk.Entry(custom_row, width=5, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
+        self.entry_layout_columns.insert(0, str(layout_config.get('columns', 2)))
+        self.entry_layout_columns.pack(side="left", padx=(4, 12))
+
+        tk.Label(custom_row, text="FILAS:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        self.entry_layout_rows = tk.Entry(custom_row, width=5, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
+        self.entry_layout_rows.insert(0, str(layout_config.get('rows', 2)))
+        self.entry_layout_rows.pack(side="left", padx=(4, 12))
+
+        tk.Button(custom_row, text="APLICAR FILAS Y COLUMNAS", bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 8, 'bold'), relief="groove", command=self.aplicar_distribucion_personalizada).pack(side="left", fill="x", expand=True)
+
+        tk.Button(frame_grid, text="⚡ ORDENAR Y ENFOCAR VENTANAS", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 10, 'bold'), relief="flat", activebackground=COLOR_SECONDARY, command=self.ordenar_grid_ventanas).pack(pady=(12, 6), fill="x", padx=25)
+        tk.Button(frame_grid, text="⬇️ MINIMIZAR TODAS LAS VENTANAS", bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 10, 'bold'), relief="flat", activebackground=COLOR_DISABLED_FG, command=self.minimizar_grid_ventanas).pack(pady=(0, 12), fill="x", padx=25)
+
+    def _leer_entero_layout(self, entry, nombre):
         try:
-            for i, hwnd in enumerate(v_list):
-                r, c = i // cols, i % cols
+            valor = int(entry.get().strip())
+        except ValueError:
+            self.mostrar_alerta("Valor inválido", f"{nombre} debe ser un número entero positivo.")
+            return None
+        if valor <= 0:
+            self.mostrar_alerta("Valor inválido", f"{nombre} debe ser mayor que cero.")
+            return None
+        return valor
+
+    def _guardar_layout_valores(self, **valores):
+        if 'LAYOUT' not in self.config:
+            self.config['LAYOUT'] = {}
+        self.config['LAYOUT'].update(valores)
+        self.guardar_config()
+
+    def _obtener_area_trabajo(self):
+        rect = win32api.GetMonitorInfo(win32api.MonitorFromPoint((0, 0)))['Work']
+        return rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]
+
+    def _mover_ventanas_layout(self, v_list, posiciones, mensaje):
+        try:
+            for hwnd, x, y, ancho, alto in posiciones:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                win32gui.MoveWindow(hwnd, w_x + (c * win_w) - offset, w_y + (r * win_h), win_w + (offset * 2), win_h + offset, True)
+                win32gui.MoveWindow(hwnd, x, y, ancho, alto, True)
                 win32gui.SetForegroundWindow(hwnd)
                 time.sleep(0.05)
-                
+
             self.root.after(100, lambda: self.root.focus_force())
-            self.log_status(f"⚡ Grid aplicado a {num} ventanas (Enfocadas).")
-        except Exception as e: self.log_status(f"❌ Error Layout: {str(e)}")
+            self.log_status(f"⚡ {mensaje} a {len(v_list)} ventanas MIR4 (Enfocadas).")
+        except Exception as e:
+            self.log_status(f"❌ Error Layout: {str(e)}")
+
+    def ordenar_grid_ventanas(self):
+        v_list = obtener_ventanas_mir4()
+        v_list.sort()
+        if not v_list:
+            self.log_status("⚠️ No hay ventanas MIR4/MIR4G del proceso del juego.")
+            return
+
+        w_x, w_y, w_w, w_h = self._obtener_area_trabajo()
+        num = len(v_list)
+        cols = int(num ** 0.5)
+        if cols * cols < num:
+            cols += 1
+        rows = (num + cols - 1) // cols
+        win_w = w_w // cols
+        win_h = w_h // rows
+        offset = self.offset_var.get()
+        posiciones = []
+        for i, hwnd in enumerate(v_list):
+            r, c = i // cols, i % cols
+            posiciones.append((hwnd, w_x + (c * win_w) - offset, w_y + (r * win_h), win_w + (offset * 2), win_h + offset))
+
+        self._guardar_layout_valores(offset=offset)
+        self._mover_ventanas_layout(v_list, posiciones, "Grid automático aplicado")
+
+    def aplicar_tamano_fijo(self):
+        ancho = self._leer_entero_layout(self.entry_layout_width, "El ancho")
+        alto = self._leer_entero_layout(self.entry_layout_height, "El alto")
+        if ancho is None or alto is None:
+            return
+
+        v_list = obtener_ventanas_mir4()
+        v_list.sort()
+        if not v_list:
+            self.log_status("⚠️ No hay ventanas MIR4/MIR4G del proceso del juego.")
+            return
+
+        w_x, w_y, w_w, w_h = self._obtener_area_trabajo()
+        columnas = w_w // ancho
+        filas = w_h // alto
+        capacidad = columnas * filas
+        if capacidad == 0 or len(v_list) > capacidad:
+            self.mostrar_alerta("Tamaño no disponible", f"Con {ancho}x{alto} solo caben {capacidad} ventanas en el área útil del monitor.")
+            return
+
+        posiciones = []
+        offset = self.offset_var.get()
+        for i, hwnd in enumerate(v_list):
+            fila, columna = i // columnas, i % columnas
+            posiciones.append((hwnd, w_x + columna * ancho - offset, w_y + fila * alto, ancho + (offset * 2), alto + offset))
+
+        self._guardar_layout_valores(fixed_width=ancho, fixed_height=alto, offset=offset)
+        self._mover_ventanas_layout(v_list, posiciones, f"Tamaño fijo {ancho}x{alto} aplicado")
+
+    def aplicar_distribucion_personalizada(self):
+        columnas = self._leer_entero_layout(self.entry_layout_columns, "Las columnas")
+        filas = self._leer_entero_layout(self.entry_layout_rows, "Las filas")
+        if columnas is None or filas is None:
+            return
+
+        v_list = obtener_ventanas_mir4()
+        v_list.sort()
+        if not v_list:
+            self.log_status("⚠️ No hay ventanas MIR4/MIR4G del proceso del juego.")
+            return
+
+        w_x, w_y, w_w, w_h = self._obtener_area_trabajo()
+        espacios = columnas * filas
+        if len(v_list) > espacios:
+            self.mostrar_alerta("Distribución insuficiente", f"La cuadrícula de {columnas}x{filas} solo tiene {espacios} espacios para {len(v_list)} ventanas.")
+            return
+        if columnas > w_w or filas > w_h:
+            self.mostrar_alerta("Distribución inválida", "La cantidad de filas o columnas supera el tamaño del área útil del monitor.")
+            return
+
+        ancho = w_w // columnas
+        alto = w_h // filas
+        offset = self.offset_var.get()
+        posiciones = []
+        for i, hwnd in enumerate(v_list):
+            fila, columna = i // columnas, i % columnas
+            posiciones.append((hwnd, w_x + columna * ancho - offset, w_y + fila * alto, ancho + (offset * 2), alto + offset))
+
+        self._guardar_layout_valores(columns=columnas, rows=filas, offset=offset)
+        self._mover_ventanas_layout(v_list, posiciones, f"Distribución {columnas}x{filas} aplicada")
 
     def minimizar_grid_ventanas(self):
-        v_list = []
-        def cb(hwnd, extra):
-            if win32gui.IsWindowVisible(hwnd) and "MIR4G" in win32gui.GetWindowText(hwnd).upper(): v_list.append(hwnd)
-            return True
-        win32gui.EnumWindows(cb, None); v_list.sort()
-        if not v_list: 
-            self.log_status("⚠️ No hay ventanas Mir4G para minimizar."); return
+        v_list = obtener_ventanas_mir4()
+        v_list.sort()
+        if not v_list:
+            self.log_status("⚠️ No hay ventanas MIR4/MIR4G del proceso del juego para minimizar.")
+            return
         try:
             for hwnd in v_list:
                 win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
-            self.log_status(f"⬇️ {len(v_list)} ventanas minimizadas.")
+            self.log_status(f"⬇️ {len(v_list)} ventanas MIR4 minimizadas.")
         except Exception as e: self.log_status(f"❌ Error al minimizar: {str(e)}")
 
     # --- TAB DESPLIEGUE ---
@@ -912,6 +1108,47 @@ class App:
         except Exception as e:
             self.log_status(f"❌ Error al intentar cerrar los procesos: {str(e)}")
 
+    def cerrar_ventanas_steam(self):
+        nombres_proceso = {"steam.exe", "steamwebhelper.exe"}
+        cerradas = 0
+
+        def callback(hwnd, _):
+            nonlocal cerradas
+            if not win32gui.IsWindowVisible(hwnd):
+                return True
+
+            proceso = None
+            try:
+                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                proceso = win32api.OpenProcess(
+                    win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ,
+                    False,
+                    pid,
+                )
+                ruta_proceso = win32process.GetModuleFileNameEx(proceso, 0)
+                if os.path.basename(ruta_proceso).lower() in nombres_proceso:
+                    win32api.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+                    cerradas += 1
+            except Exception:
+                pass
+            finally:
+                if proceso:
+                    win32api.CloseHandle(proceso)
+            return True
+
+        win32gui.EnumWindows(callback, None)
+        self.log_status(f"🪟 Ventanas de Steam cerradas: {cerradas}.")
+
+    def esperar_mir4_y_cerrar_steam(self, ventanas_anteriores):
+        limite = time.time() + 120
+        while time.time() < limite:
+            ventanas_actuales = set(obtener_ventanas_mir4())
+            if ventanas_actuales - ventanas_anteriores:
+                self.cerrar_ventanas_steam()
+                return
+            time.sleep(0.5)
+        self.log_status("⚠️ MIR4 no apareció a tiempo; no se cerraron ventanas de Steam.")
+
     def iniciar_captura(self, entry_x, entry_y):
         if self.capturando_activo: return
         self.capturando_activo = True
@@ -973,7 +1210,15 @@ class App:
     def lanzar_steam(self):
         ruta = self.ent_steam.get()
         if os.path.exists(ruta):
-            try: subprocess.Popen([ruta, "-applaunch", "1623660"]); self.log_status("🎮 Solicitud enviada a Steam.")
+            try:
+                ventanas_anteriores = set(obtener_ventanas_mir4())
+                subprocess.Popen([ruta, "-applaunch", "1623660"])
+                threading.Thread(
+                    target=self.esperar_mir4_y_cerrar_steam,
+                    args=(ventanas_anteriores,),
+                    daemon=True,
+                ).start()
+                self.log_status("🎮 Solicitud enviada a Steam.")
             except Exception as e: self.log_status(f"❌ Error en Steam: {str(e)}")
         else: self.log_status("❌ Steam no localizado.")
 
@@ -1113,8 +1358,22 @@ class App:
 
     # --- FUNCIÓN DE GUARDADO JSON ---
     def guardar_config(self):
-        with open(self.config_file, 'w', encoding='utf-8') as configfile:
-            json.dump(self.config, configfile, indent=4, ensure_ascii=False)
+        config_dir = os.path.dirname(self.config_file) or "."
+        temp_path = None
+        try:
+            fd, temp_path = tempfile.mkstemp(prefix=".config_", suffix=".tmp", dir=config_dir)
+            with os.fdopen(fd, 'w', encoding='utf-8') as configfile:
+                json.dump(self.config, configfile, indent=4, ensure_ascii=False)
+                configfile.flush()
+                os.fsync(configfile.fileno())
+
+            if os.path.exists(self.config_file):
+                shutil.copy2(self.config_file, self.config_file + ".bak")
+            os.replace(temp_path, self.config_file)
+            temp_path = None
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.unlink(temp_path)
 
 if __name__ == "__main__":
     root = tk.Tk()

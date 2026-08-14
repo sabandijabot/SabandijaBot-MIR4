@@ -29,7 +29,6 @@ py -m PyInstaller --noconsole --onefile --uac-admin --icon=sabandijab0tico.ico M
 
 ## ⚙️ Uso
 
-1. Ejecuta `MisionQQ4.py` o el `.exe` compilado como **Administrador**.
+1. Ejecuta `MisionQQ4.py` para las pruebas. El `.exe` compilado solicita permisos de **Administrador** al iniciarse.
 2. Configura las rutas de tu launcher y las coordenadas de inicio en la pestaña **Despliegue**.
-3. Selecciona la ventana del juego, define el modo de bot y haz clic en **Desplegar**.
-
+3. Selecciona la ventana del juego, define el modo de bot y haz clic en **Iniciar bot**.

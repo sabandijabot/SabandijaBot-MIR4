@@ -4,6 +4,9 @@ build/
 
 # Archivos de configuración local (para no subir tus rutas personales a la nube)
 config.json
+config.json.bak
+config.json.corrupt
+.config_*.tmp
 
 # Caché de Python
 __pycache__/
