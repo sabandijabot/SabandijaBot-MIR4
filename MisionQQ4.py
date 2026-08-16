@@ -17,8 +17,345 @@ import tempfile
 from datetime import datetime
 
 # --- CONFIGURACIÓN GLOBAL ---
-APP_VERSION = "v14.4" # Versión actualizada con CRUD
-RESERVED_CONFIG_SECTIONS = {"RUTAS", "LAUNCHER", "LAYOUT"}
+APP_VERSION = "v14.5" # Versión con interfaz en español e inglés
+RESERVED_CONFIG_SECTIONS = {"RUTAS", "LAUNCHER", "LAYOUT", "IDIOMA"}
+
+TRANSLATIONS = {
+    "es": {
+        "app.title": "SABANDIJA B0T - EDICIÓN {version}",
+        "app.header": "🐍 CONTROL DE SABANDIJA",
+        "tab.instances": "  INSTANCIAS SABANDIJA  ",
+        "tab.layout": "  DISEÑO RECTIL  ",
+        "tab.deploy": "  DESPLIEGUE  ",
+        "tab.log": "  REGISTRO DE CAZA  ",
+        "language.selector": "Idioma / Language:",
+        "language.spanish": "Español",
+        "language.english": "English",
+        "language.restart.title": "Idioma guardado",
+        "language.restart.message": "Reiniciando el bot para aplicar el idioma seleccionado...",
+        "frame.instances": " 📋 INSTANCIAS Y PERFILES GUARDADOS ",
+        "frame.profile": " 🛠️ CONFIGURACIÓN DEL PERFIL ",
+        "frame.execution": " 🎮 CONTROL DE EJECUCIÓN ",
+        "frame.log": " REGISTRO DE CAZA ",
+        "frame.layout": " DISEÑO DE VENTANAS RECTIL (CUADRÍCULA) ",
+        "frame.fixed_size": " TAMAÑO FIJO ",
+        "frame.custom_distribution": " DISTRIBUCIÓN PERSONALIZADA ",
+        "frame.steam": " INFRAESTRUCTURA STEAM ",
+        "frame.launcher_path": " RUTA DEL LAUNCHER MIR4 (GAME 1 Y 2) ",
+        "frame.coordinates": " COORDENADAS DE BOTONES (X, Y) ",
+        "frame.fine_tuning": " AJUSTES FINOS ",
+        "column.nickname": "Apodo",
+        "column.mode": "Modo",
+        "column.window": "Ventana asignada",
+        "column.delay": "Espera",
+        "column.status": "Estado",
+        "label.nickname": "APODO:",
+        "label.window": "VENTANA:",
+        "label.delay": "ESPERA (SEG):",
+        "label.launcher_path": "Ruta del launcher:",
+        "label.title_class": "TÍTULO O CLASE:",
+        "label.launcher_wait": "ESPERA TRAS ENCONTRAR EL LAUNCHER (seg):",
+        "label.game_wait": "ESPERA ENTRE GAME 1 Y GAME 2 (seg):",
+        "label.offset": "Ajuste de borde (offset): {value}",
+        "label.width": "ANCHO:",
+        "label.height": "ALTO:",
+        "label.columns": "COLUMNAS:",
+        "label.rows": "FILAS:",
+        "label.launcher_hint": "💡 Si no lo encuentra, usa solo: MIR4",
+        "mode.mission": "MISIÓN Q",
+        "mode.farm": "FARMA EXP",
+        "mode.boss": "SUMMON BOSS",
+        "tooltip.mode.mission": "Misión Q: ejecuta una secuencia automática de Q, E y T, seguida de clics en el centro de la ventana.",
+        "tooltip.mode.farm": "Farma EXP: activa la secuencia de farmeo con TAB, flecha abajo y F. Puede usar la ulti con R.",
+        "tooltip.mode.boss": "Summon Boss: pulsa E periódicamente para ejecutar la acción de invocación del boss.",
+        "check.ultimate": "LANZAR ULTI [R]",
+        "button.new": "🆕 NUEVO",
+        "button.save_profile": "💾 GUARDAR / ACTUALIZAR",
+        "button.delete": "🗑️ ELIMINAR",
+        "button.start": "🚀 INICIAR BOT",
+        "button.pause": "⏸️ PAUSAR",
+        "button.resume": "▶️ REANUDAR",
+        "button.stop": "🛑 DETENER",
+        "button.panic": "☠️ BOTÓN DE PÁNICO (CERRAR TODO MIR4) ☠️",
+        "button.apply_fixed": "APLICAR TAMAÑO FIJO",
+        "button.apply_grid": "APLICAR FILAS Y COLUMNAS",
+        "button.arrange": "⚡ ORDENAR Y ENFOCAR VENTANAS",
+        "button.minimize": "⬇️ MINIMIZAR TODAS LAS VENTANAS",
+        "button.save_steam": "💾 GUARDAR RUTA STEAM",
+        "button.start_steam": "🎮 INICIAR MIR4 DESDE STEAM",
+        "button.capture": "🎯 CAPTURAR",
+        "button.save_launcher": "💾 GUARDAR CONFIGURACIÓN DEL LAUNCHER",
+        "button.start_uia": "🛡️ INICIAR (UIAutomation SEGURO)",
+        "button.ok": "ENTENDIDO",
+        "button.yes_delete": "SÍ, ELIMINAR",
+        "button.cancel": "CANCELAR",
+        "status.auto_paused": "AUTO-PAUSADO 👁️",
+        "status.paused": "PAUSADO ⏸️",
+        "status.running": "EJECUTANDO ▶️",
+        "status.finished": "TERMINADO 🛑",
+        "status.saved": "GUARDADO 💾",
+        "status.uia_ready": "✅ UIAutomation seguro cargado",
+        "status.uia_missing": "❌ FALTA: Ejecuta 'pip install pywinauto'",
+        "log.crud_ready": "🛡️ Sistema CRUD activado. Crea, edita y ejecuta tus perfiles fácilmente.",
+        "log.initialized": "SabandijaBot {version} inicializado. [{uia}]",
+        "log.config_found": "📁 Archivo de configuración JSON ubicado en:\n   {path}",
+        "log.config_missing": "⚠️ No se encontró el archivo JSON. Se creará en:\n   {path}",
+        "log.auto_paused": "👁️ [{nickname}] Auto-pausado.",
+        "log.auto_resumed": "🔄 [{nickname}] Auto-reanudado.",
+        "log.form_cleared": "📝 Formulario limpio. Listo para crear un nuevo perfil.",
+        "log.updated_live": "⚙️ [{nickname}] actualizado en caliente.",
+        "log.saved_profile": "💾 Perfil [{nickname}] guardado correctamente.",
+        "log.deleted_profile": "🗑️ Perfil [{nickname}] eliminado.",
+        "log.started": "✅ [{nickname}] iniciado y ejecutándose.",
+        "log.paused": "⏸️ [{nickname}] pausado.",
+        "log.resumed": "▶️ [{nickname}] reanudado.",
+        "log.stopped": "🛑 [{nickname}] detenido.",
+        "log.hwnd_running": "⚠️ HWND {hwnd} ya está en ejecución.",
+        "log.error": "❌ Error: {error}",
+        "log.layout_error": "❌ Error de diseño: {error}",
+        "log.no_windows": "⚠️ No hay ventanas MIR4/MIR4G del proceso del juego.",
+        "log.no_windows_minimize": "⚠️ No hay ventanas MIR4/MIR4G del proceso del juego para minimizar.",
+        "log.layout_applied": "⚡ {message} a {count} ventanas MIR4 (enfocadas).",
+        "log.layout_auto": "Cuadrícula automática aplicada",
+        "log.layout_fixed": "Tamaño fijo {width}x{height} aplicado",
+        "log.layout_custom": "Distribución {columns}x{rows} aplicada",
+        "log.minimized": "⬇️ {count} ventanas MIR4 minimizadas.",
+        "log.steam_closed": "🪟 Ventanas de Steam cerradas: {count}.",
+        "log.mir4_timeout": "⚠️ MIR4 no apareció a tiempo; no se cerraron ventanas de Steam.",
+        "log.capture_started": "🎯 MODO CAPTURA ACTIVADO. Haz clic en el botón del launcher...",
+        "log.coordinates_captured": "✅ Coordenadas capturadas: X={x}, Y={y}",
+        "log.capture_failed": "❌ Captura fallida. {message}",
+        "log.invalid_path": "❌ Ruta incorrecta.",
+        "capture.outside_window": "Clic fuera de la ventana.",
+        "log.steam_updated": "💾 Ruta de Steam actualizada.",
+        "log.steam_request": "🎮 Solicitud enviada a Steam.",
+        "log.steam_error": "❌ Error en Steam: {error}",
+        "log.steam_missing": "❌ Steam no localizado.",
+        "log.launcher_saved": "💾 Configuración del launcher guardada.",
+        "log.coordinates_error": "❌ Error: Verifica que las coordenadas y tiempos sean números.",
+        "log.anti_ban_missing": "❌ FALTA LIBRERÍA ANTI-BAN. CMD > pip install pywinauto",
+        "log.safe_sequence": "🛡️ Iniciando secuencia segura (UIAutomation)...",
+        "log.uia_scan": "🔍 Escaneando elementos UIA en ({x}, {y})...",
+        "log.uia_button": "✅ Botón oficial detectado. Invocando...",
+        "log.uia_generic": "⚠️ Buscando controles genéricos...",
+        "log.uia_control": "✅ Control encontrado ({class_name}). Invocando...",
+        "log.uia_not_found": "❌ No se pudo encontrar un elemento clickeable en esas coordenadas.",
+        "log.uia_error": "❌ Error interno UIA: {error}",
+        "log.launcher_open": "🚀 Abriendo ejecutable del launcher...",
+        "log.launcher_search": "⏳ Buscando ventana ('{title}')...",
+        "log.launcher_not_found": "❌ No se encontró la ventana del launcher.",
+        "log.window_found": "✅ ¡Ventana encontrada (HWND: {hwnd})!",
+        "log.wait_render": "⏳ Esperando {seconds} seg para renderizar la UI...",
+        "log.press_game": "🛡️ Presionando {game} vía UIAutomation...",
+        "log.wait_game": "⏳ Esperando que cargue {game}...",
+        "log.game_slow": "⚠️ {game} tardó demasiado, pero continuando con {next_game}...",
+        "log.wait_seconds": "💤 Esperando {seconds} segundos...",
+        "log.game_launcher_missing": "❌ No se pudo encontrar el launcher para abrir {game}.",
+        "log.deploy_complete": "🎉 ¡Despliegue completado 100% seguro!",
+        "log.deploy_timeout": "⚠️ Proceso finalizado, pero {game} pudo no haber cargado a tiempo.",
+        "log.launcher_error": "❌ Error crítico en el launcher: {error}",
+        "log.restart_error": "❌ No se pudo reiniciar el bot: {error}",
+        "log.panic_started": "☠️ BOTÓN DE PÁNICO ACTIVADO. Eliminando procesos...",
+        "log.panic_finished": "✅ Todos los procesos MIR4 (incluido Steam) han sido aniquilados.",
+        "log.panic_error": "❌ Error al intentar cerrar los procesos: {error}",
+        "popup.panic_title": "SISTEMA DE EMERGENCIA",
+        "popup.panic_header": "☠️ SECUENCIA DE PÁNICO ☠️",
+        "popup.panic_message": "¡Aniquilación completada con éxito!\nTodos los procesos de MIR4 y sus launchers\nhan sido cerrados de manera forzada.",
+        "popup.attention": "Atención",
+        "popup.invalid_value": "Valor inválido",
+        "popup.confirm_delete": "Confirmar eliminación",
+        "popup.confirm_delete_message": "¿Seguro que quieres eliminar\nel perfil [{nickname}]?",
+        "popup.critical_error": "Error crítico",
+        "popup.critical_error_message": "Falta la librería 'pywinauto'.\nAbre CMD y ejecuta: pip install pywinauto\n\nLuego reinicia el bot.",
+        "popup.nickname_required": "Debes ingresar un APODO\npara guardar el perfil.",
+        "popup.reserved_name": "[{nickname}] es un nombre reservado\nde configuración y no puede usarse como perfil.",
+        "popup.select_profile_delete": "Selecciona un perfil de la tabla\npara eliminar.",
+        "popup.running_profile": "No puedes eliminar un perfil en ejecución.\nDetenlo primero.",
+        "popup.invalid_profile": "Ese no es un perfil guardado válido.",
+        "popup.select_window": "Selecciona una ventana válida\nen el formulario o despliega el perfil primero.",
+        "popup.nickname_start": "Debes ingresar o seleccionar un APODO.",
+        "popup.no_mir4_window": "No hay ninguna ventana de MIR4 seleccionada en el formulario.",
+        "popup.invalid_layout": "{name} debe ser un número entero positivo.",
+        "popup.positive_layout": "{name} debe ser mayor que cero.",
+        "popup.size_unavailable": "Con {width}x{height} solo caben {count} ventanas en el área útil del monitor.",
+        "popup.distribution_insufficient": "La cuadrícula de {columns}x{rows} solo tiene {spaces} espacios para {count} ventanas.",
+        "popup.distribution_invalid": "La cantidad de filas o columnas supera el tamaño del área útil del monitor.",
+        "popup.config_error": "La configuración debe ser un objeto JSON",
+        "config.load_error": "Error cargando JSON: {error}",
+        "config.backup_created": "Copia de seguridad de configuración corrupta: {path}",
+        "config.backup_error": "No se pudo respaldar la configuración corrupta: {error}",
+    },
+    "en": {
+        "app.title": "SABANDIJA B0T - EDITION {version}",
+        "app.header": "🐍 SABANDIJA CONTROL",
+        "tab.instances": "  SABANDIJA INSTANCES  ",
+        "tab.layout": "  RECTIL LAYOUT  ",
+        "tab.deploy": "  DEPLOYMENT  ",
+        "tab.log": "  HUNTING LOG  ",
+        "language.selector": "Idioma / Language:",
+        "language.spanish": "Español",
+        "language.english": "English",
+        "language.restart.title": "Language saved",
+        "language.restart.message": "Restarting the bot to apply the selected language...",
+        "frame.instances": " 📋 SAVED INSTANCES AND PROFILES ",
+        "frame.profile": " 🛠️ PROFILE CONFIGURATION ",
+        "frame.execution": " 🎮 EXECUTION CONTROL ",
+        "frame.log": " HUNTING LOG ",
+        "frame.layout": " RECTIL WINDOWS LAYOUT (GRID) ",
+        "frame.fixed_size": " FIXED SIZE ",
+        "frame.custom_distribution": " CUSTOM DISTRIBUTION ",
+        "frame.steam": " STEAM INFRASTRUCTURE ",
+        "frame.launcher_path": " MIR4 LAUNCHER PATH (GAME 1 & 2) ",
+        "frame.coordinates": " BUTTON COORDINATES (X, Y) ",
+        "frame.fine_tuning": " FINE-TUNING ",
+        "column.nickname": "Nickname",
+        "column.mode": "Mode",
+        "column.window": "Assigned window",
+        "column.delay": "Delay",
+        "column.status": "Status",
+        "label.nickname": "NICKNAME:",
+        "label.window": "WINDOW:",
+        "label.delay": "DELAY (SEC):",
+        "label.launcher_path": "Steam launcher path:",
+        "label.title_class": "TITLE OR CLASS:",
+        "label.launcher_wait": "WAIT AFTER FINDING LAUNCHER (sec):",
+        "label.game_wait": "WAIT BETWEEN GAME 1 AND GAME 2 (sec):",
+        "label.offset": "Border offset: {value}",
+        "label.width": "WIDTH:",
+        "label.height": "HEIGHT:",
+        "label.columns": "COLUMNS:",
+        "label.rows": "ROWS:",
+        "label.launcher_hint": "💡 If it cannot be found, use only: MIR4",
+        "mode.mission": "MISSION Q",
+        "mode.farm": "FARM EXP",
+        "mode.boss": "SUMMON BOSS",
+        "tooltip.mode.mission": "Mission Q: runs an automatic Q, E and T sequence, followed by clicks in the center of the window.",
+        "tooltip.mode.farm": "EXP Farm: runs the farming sequence with TAB, Down Arrow and F. It can use the ultimate with R.",
+        "tooltip.mode.boss": "Summon Boss: presses E periodically to execute the boss summoning action.",
+        "check.ultimate": "USE ULTIMATE [R]",
+        "button.new": "🆕 NEW",
+        "button.save_profile": "💾 SAVE / UPDATE",
+        "button.delete": "🗑️ DELETE",
+        "button.start": "🚀 START BOT",
+        "button.pause": "⏸️ PAUSE",
+        "button.resume": "▶️ RESUME",
+        "button.stop": "🛑 STOP",
+        "button.panic": "☠️ PANIC BUTTON (CLOSE ALL MIR4) ☠️",
+        "button.apply_fixed": "APPLY FIXED SIZE",
+        "button.apply_grid": "APPLY ROWS AND COLUMNS",
+        "button.arrange": "⚡ ARRANGE AND FOCUS WINDOWS",
+        "button.minimize": "⬇️ MINIMIZE ALL WINDOWS",
+        "button.save_steam": "💾 SAVE STEAM PATH",
+        "button.start_steam": "🎮 START MIR4 FROM STEAM",
+        "button.capture": "🎯 CAPTURE",
+        "button.save_launcher": "💾 SAVE LAUNCHER CONFIGURATION",
+        "button.start_uia": "🛡️ START (SAFE UIAutomation)",
+        "button.ok": "OK",
+        "button.yes_delete": "YES, DELETE",
+        "button.cancel": "CANCEL",
+        "status.auto_paused": "AUTO-PAUSED 👁️",
+        "status.paused": "PAUSED ⏸️",
+        "status.running": "RUNNING ▶️",
+        "status.finished": "FINISHED 🛑",
+        "status.saved": "SAVED 💾",
+        "status.uia_ready": "✅ Safe UIAutomation loaded",
+        "status.uia_missing": "❌ MISSING: Run 'pip install pywinauto'",
+        "log.crud_ready": "🛡️ CRUD system enabled. Create, edit and run your profiles easily.",
+        "log.initialized": "SabandijaBot {version} initialized. [{uia}]",
+        "log.config_found": "📁 JSON configuration file located at:\n   {path}",
+        "log.config_missing": "⚠️ JSON file not found. It will be created at:\n   {path}",
+        "log.auto_paused": "👁️ [{nickname}] Auto-paused.",
+        "log.auto_resumed": "🔄 [{nickname}] Auto-resumed.",
+        "log.form_cleared": "📝 Form cleared. Ready to create a new profile.",
+        "log.updated_live": "⚙️ [{nickname}] updated live.",
+        "log.saved_profile": "💾 Profile [{nickname}] saved successfully.",
+        "log.deleted_profile": "🗑️ Profile [{nickname}] deleted.",
+        "log.started": "✅ [{nickname}] started and running.",
+        "log.paused": "⏸️ [{nickname}] paused.",
+        "log.resumed": "▶️ [{nickname}] resumed.",
+        "log.stopped": "🛑 [{nickname}] stopped.",
+        "log.hwnd_running": "⚠️ HWND {hwnd} is already running.",
+        "log.error": "❌ Error: {error}",
+        "log.layout_error": "❌ Layout error: {error}",
+        "log.no_windows": "⚠️ No MIR4/MIR4G windows from the game process.",
+        "log.no_windows_minimize": "⚠️ No MIR4/MIR4G windows from the game process to minimize.",
+        "log.layout_applied": "⚡ {message} to {count} MIR4 windows (focused).",
+        "log.layout_auto": "Automatic grid applied",
+        "log.layout_fixed": "Fixed size {width}x{height} applied",
+        "log.layout_custom": "{columns}x{rows} distribution applied",
+        "log.minimized": "⬇️ {count} MIR4 windows minimized.",
+        "log.steam_closed": "🪟 Steam windows closed: {count}.",
+        "log.mir4_timeout": "⚠️ MIR4 did not appear in time; Steam windows were not closed.",
+        "log.capture_started": "🎯 CAPTURE MODE ENABLED. Click the launcher button...",
+        "log.coordinates_captured": "✅ Coordinates captured: X={x}, Y={y}",
+        "log.capture_failed": "❌ Capture failed. {message}",
+        "log.invalid_path": "❌ Incorrect path.",
+        "capture.outside_window": "Click outside the window.",
+        "log.steam_updated": "💾 Steam path updated.",
+        "log.steam_request": "🎮 Request sent to Steam.",
+        "log.steam_error": "❌ Steam error: {error}",
+        "log.steam_missing": "❌ Steam not found.",
+        "log.launcher_saved": "💾 Launcher configuration saved.",
+        "log.coordinates_error": "❌ Error: Check that coordinates and times are numbers.",
+        "log.anti_ban_missing": "❌ ANTI-BAN LIBRARY MISSING. CMD > pip install pywinauto",
+        "log.safe_sequence": "🛡️ Starting safe sequence (UIAutomation)...",
+        "log.uia_scan": "🔍 Scanning UIA elements at ({x}, {y})...",
+        "log.uia_button": "✅ Official button detected. Invoking...",
+        "log.uia_generic": "⚠️ Looking for generic controls...",
+        "log.uia_control": "✅ Control found ({class_name}). Invoking...",
+        "log.uia_not_found": "❌ Could not find a clickable element at those coordinates.",
+        "log.uia_error": "❌ Internal UIA error: {error}",
+        "log.launcher_open": "🚀 Opening launcher executable...",
+        "log.launcher_search": "⏳ Looking for window ('{title}')...",
+        "log.launcher_not_found": "❌ Launcher window not found.",
+        "log.window_found": "✅ Window found (HWND: {hwnd})!",
+        "log.wait_render": "⏳ Waiting {seconds} sec for UI to render...",
+        "log.press_game": "🛡️ Pressing {game} via UIAutomation...",
+        "log.wait_game": "⏳ Waiting for {game} to load...",
+        "log.game_slow": "⚠️ {game} took too long, continuing with {next_game}...",
+        "log.wait_seconds": "💤 Waiting {seconds} seconds...",
+        "log.game_launcher_missing": "❌ Could not find the launcher to open {game}.",
+        "log.deploy_complete": "🎉 Deployment completed 100% safely!",
+        "log.deploy_timeout": "⚠️ Process finished, but {game} may not have loaded in time.",
+        "log.launcher_error": "❌ Critical launcher error: {error}",
+        "log.restart_error": "❌ Could not restart the bot: {error}",
+        "log.panic_started": "☠️ PANIC BUTTON ACTIVATED. Terminating processes...",
+        "log.panic_finished": "✅ All MIR4 processes (including Steam) have been terminated.",
+        "log.panic_error": "❌ Error while closing processes: {error}",
+        "popup.panic_title": "EMERGENCY SYSTEM",
+        "popup.panic_header": "☠️ PANIC SEQUENCE ☠️",
+        "popup.panic_message": "Annihilation completed successfully!\nAll MIR4 processes and launchers\nwere forcibly closed.",
+        "popup.attention": "Attention",
+        "popup.invalid_value": "Invalid value",
+        "popup.confirm_delete": "Confirm deletion",
+        "popup.confirm_delete_message": "Are you sure you want to delete\nprofile [{nickname}]?",
+        "popup.critical_error": "Critical error",
+        "popup.critical_error_message": "The 'pywinauto' library is missing.\nOpen CMD and run: pip install pywinauto\n\nThen restart the bot.",
+        "popup.nickname_required": "Enter a NICKNAME\nto save the profile.",
+        "popup.reserved_name": "[{nickname}] is a reserved configuration name\nand cannot be used as a profile.",
+        "popup.select_profile_delete": "Select a profile from the table\nto delete it.",
+        "popup.running_profile": "You cannot delete a running profile.\nStop it first.",
+        "popup.invalid_profile": "That is not a valid saved profile.",
+        "popup.select_window": "Select a valid window\nin the form or deploy the profile first.",
+        "popup.nickname_start": "Enter or select a NICKNAME.",
+        "popup.no_mir4_window": "No MIR4 window is selected in the form.",
+        "popup.invalid_layout": "{name} must be a positive integer.",
+        "popup.positive_layout": "{name} must be greater than zero.",
+        "popup.size_unavailable": "Only {count} windows fit in the monitor work area at {width}x{height}.",
+        "popup.distribution_insufficient": "The {columns}x{rows} grid has only {spaces} spaces for {count} windows.",
+        "popup.distribution_invalid": "The number of rows or columns exceeds the monitor work area size.",
+        "popup.config_error": "Configuration must be a JSON object",
+        "config.load_error": "Error loading JSON: {error}",
+        "config.backup_created": "Corrupt configuration backup: {path}",
+        "config.backup_error": "Could not back up corrupt configuration: {error}",
+    },
+}
+
+MODE_TRANSLATION_KEYS = {
+    "MISION_Q": "mode.mission",
+    "FARMA_EXP": "mode.farm",
+    "SUMMON_BOSS": "mode.boss",
+}
 
 # --- VERIFICAR DEPENDENCIA UIAUTOMATION ---
 try:
@@ -169,6 +506,51 @@ class ScrollableFrame(ttk.Frame):
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
 
+class ToolTip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tipwindow = None
+        self.after_id = None
+        widget.bind("<Enter>", self._schedule, add="+")
+        widget.bind("<Leave>", self._hide, add="+")
+        widget.bind("<ButtonPress>", self._hide, add="+")
+
+    def _schedule(self, _event=None):
+        self._hide()
+        self.after_id = self.widget.after(350, self._show)
+
+    def _show(self):
+        if self.tipwindow or not self.widget.winfo_viewable():
+            return
+        x = self.widget.winfo_rootx() + 12
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 6
+        self.tipwindow = tk.Toplevel(self.widget)
+        self.tipwindow.wm_overrideredirect(True)
+        self.tipwindow.wm_geometry(f"+{x}+{y}")
+        tk.Label(
+            self.tipwindow,
+            text=self.text,
+            justify="left",
+            wraplength=320,
+            bg="#172417",
+            fg="#ffffff",
+            relief="solid",
+            borderwidth=1,
+            padx=8,
+            pady=6,
+            font=("Segoe UI", 9),
+        ).pack()
+
+    def _hide(self, _event=None):
+        if self.after_id:
+            self.widget.after_cancel(self.after_id)
+            self.after_id = None
+        if self.tipwindow:
+            self.tipwindow.destroy()
+            self.tipwindow = None
+
+
 class BotInstance(threading.Thread):
     def __init__(self, hwnd, modo, delay_personalizado=5, usar_ulti=False, apodo=""):
         super().__init__()
@@ -242,9 +624,16 @@ class BotInstance(threading.Thread):
 
 
 class App:
+    def t(self, key, **kwargs):
+        text = TRANSLATIONS.get(self.idioma, TRANSLATIONS["es"]).get(key, key)
+        return text.format(**kwargs)
+
+    def modo_visible(self, modo):
+        return self.t(MODE_TRANSLATION_KEYS.get(modo, "mode.mission"))
+
     def __init__(self, root):
         self.root = root
-        self.root.title(f"SABANDIJA B0T - EDITION {APP_VERSION}")
+        self.idioma = "es"
         self.root.geometry("640x590")
         self.root.minsize(520, 440)
         self.root.configure(bg=COLOR_BG)
@@ -263,6 +652,7 @@ class App:
         self.instancias_activas = {}
         self.ulti_var = tk.BooleanVar(value=False)
         self.capturando_activo = False
+        self.reiniciando = False
         self.item_a_hwnd = {} # Mapeo invisible entre fila de tabla y HWND
         
         # --- CORRECCIÓN PARA .EXE ---
@@ -289,7 +679,7 @@ class App:
                 'fixed_height': 450,
                 'columns': 2,
                 'rows': 2,
-            }
+            },
         }
         config_necesita_guardado = False
 
@@ -301,14 +691,14 @@ class App:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     self.config = json.load(f)
                 if not isinstance(self.config, dict):
-                    raise ValueError("La configuración debe ser un objeto JSON")
+                    raise ValueError(self.t("popup.config_error"))
             except Exception as e:
-                print(f"Error cargando JSON: {e}")
+                print(self.t("config.load_error", error=e))
                 try:
                     shutil.copy2(self.config_file, self.config_file + ".corrupt")
-                    print(f"Copia de seguridad de configuración corrupta: {self.config_file}.corrupt")
+                    print(self.t("config.backup_created", path=f"{self.config_file}.corrupt"))
                 except OSError as backup_error:
-                    print(f"No se pudo respaldar la configuración corrupta: {backup_error}")
+                    print(self.t("config.backup_error", error=backup_error))
                 self.config = {}
                 config_necesita_guardado = True
 
@@ -317,8 +707,16 @@ class App:
                 self.config[section] = default_value.copy()
                 config_necesita_guardado = True
 
+        idioma_guardado = self.config.get("IDIOMA", "es")
+        self.idioma = idioma_guardado if isinstance(idioma_guardado, str) and idioma_guardado in TRANSLATIONS else "es"
+        if self.config.get("IDIOMA") != self.idioma:
+            self.config["IDIOMA"] = self.idioma
+            config_necesita_guardado = True
+
         if config_necesita_guardado:
             self.guardar_config()
+
+        self.root.title(self.t("app.title", version=APP_VERSION))
 
         self.style = ttk.Style()
         self.style.theme_use('clam')
@@ -334,7 +732,21 @@ class App:
 
         header_frame = tk.Frame(self.root, bg=COLOR_BG)
         header_frame.pack(fill="x", pady=3)
-        tk.Label(header_frame, text="🐍 SABANDIJA CONTROL", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Impact', 18)).pack()
+        tk.Label(header_frame, text=self.t("app.header"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Impact', 18)).pack()
+
+        language_frame = tk.Frame(header_frame, bg=COLOR_BG)
+        language_frame.pack(fill="x", padx=10, pady=(0, 2))
+        tk.Label(language_frame, text=self.t("language.selector"), bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 8, 'bold')).pack(side="right", padx=(5, 0))
+        self.idioma_selector = ttk.Combobox(
+            language_frame,
+            state="readonly",
+            width=10,
+            values=(self.t("language.spanish"), self.t("language.english")),
+            font=('Segoe UI', 8),
+        )
+        self.idioma_selector.set(self.t("language.spanish" if self.idioma == "es" else "language.english"))
+        self.idioma_selector.pack(side="right")
+        self.idioma_selector.bind("<<ComboboxSelected>>", self.cambiar_idioma)
 
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True, padx=6, pady=3)
@@ -344,21 +756,60 @@ class App:
         self.tab_despliegue = ttk.Frame(self.notebook)
         self.tab_log = ttk.Frame(self.notebook)
 
-        self.notebook.add(self.tab_bot, text="  SABANDIJA INSTANCES  ")
-        self.notebook.add(self.tab_layout, text="  RECTIL LAYOUT  ")
-        self.notebook.add(self.tab_despliegue, text="  DESPLIEGUE  ")
-        self.notebook.add(self.tab_log, text="  HUNTING LOG  ")
+        self.notebook.add(self.tab_bot, text=self.t("tab.instances"))
+        self.notebook.add(self.tab_layout, text=self.t("tab.layout"))
+        self.notebook.add(self.tab_despliegue, text=self.t("tab.deploy"))
+        self.notebook.add(self.tab_log, text=self.t("tab.log"))
 
         self.setup_tab_log()
         self.setup_tab_bot()
         self.setup_tab_layout()
         self.setup_tab_despliegue()
 
-        self.log_status("🛡️ Sistema CRUD activado. Crea, edita y ejecuta tus perfiles fácilmente.")
+        self.log_status(self.t("log.crud_ready"))
 
         self.running_monitor = True
         self.monitor_thread = threading.Thread(target=self.monitor_foco_ventanas, daemon=True)
         self.monitor_thread.start()
+
+    def cambiar_idioma(self, event=None):
+        if self.reiniciando:
+            return
+        idioma_nuevo = "en" if self.idioma_selector.get() == self.t("language.english") else "es"
+        if idioma_nuevo == self.idioma:
+            return
+        self.config["IDIOMA"] = idioma_nuevo
+        self.guardar_config()
+        self.reiniciando = True
+        self.idioma_selector.configure(state="disabled")
+        self.mostrar_alerta(self.t("language.restart.title"), self.t("language.restart.message"))
+        self.root.after(700, self.reiniciar_aplicacion)
+
+    def reiniciar_aplicacion(self):
+        self.running_monitor = False
+        for bot in list(self.instancias_activas.values()):
+            bot.stop()
+
+        if getattr(sys, "frozen", False):
+            comando = [sys.executable, *sys.argv[1:]]
+            directorio = os.path.dirname(sys.executable)
+        else:
+            comando = [sys.executable, os.path.abspath(__file__), *sys.argv[1:]]
+            directorio = os.path.dirname(os.path.abspath(__file__))
+
+        try:
+            subprocess.Popen(comando, cwd=directorio)
+        except Exception as error:
+            self.reiniciando = False
+            self.idioma_selector.configure(state="readonly")
+            self.mostrar_alerta(
+                self.t("popup.critical_error"),
+                self.t("log.restart_error", error=error),
+                es_error=True,
+            )
+            return
+
+        self.root.destroy()
 
     # --- SISTEMA DE POPUPS ---
     def mostrar_alerta(self, titulo, mensaje, es_error=False):
@@ -380,7 +831,7 @@ class App:
         tk.Label(popup, text=f"{icono} {titulo}", bg=COLOR_BG, fg=color_titulo, font=('Segoe UI', 12, 'bold')).pack(pady=(20, 10))
         tk.Label(popup, text=mensaje, bg=COLOR_BG, fg="#ffffff", font=('Segoe UI', 10), justify="center").pack(pady=5)
 
-        tk.Button(popup, text="ENTENDIDO", bg=COLOR_CARD, fg=COLOR_ACCENT, activebackground=COLOR_ACCENT, activeforeground="#000", font=('Segoe UI', 9, 'bold'), relief="groove", width=15, command=popup.destroy).pack(pady=(15, 10))
+        tk.Button(popup, text=self.t("button.ok"), bg=COLOR_CARD, fg=COLOR_ACCENT, activebackground=COLOR_ACCENT, activeforeground="#000", font=('Segoe UI', 9, 'bold'), relief="groove", width=15, command=popup.destroy).pack(pady=(15, 10))
 
     def pedir_confirmacion(self, titulo, mensaje):
         self.resultado_confirmacion = False
@@ -410,8 +861,8 @@ class App:
         btn_frame = tk.Frame(popup, bg=COLOR_BG)
         btn_frame.pack(pady=(15, 10))
 
-        tk.Button(btn_frame, text="SÍ, ELIMINAR", bg="#330000", fg="#ff0000", activebackground="#ff0000", activeforeground="#fff", font=('Segoe UI', 9, 'bold'), relief="groove", width=15, command=on_yes).pack(side="left", padx=10)
-        tk.Button(btn_frame, text="CANCELAR", bg=COLOR_CARD, fg=COLOR_ACCENT, activebackground=COLOR_ACCENT, activeforeground="#000", font=('Segoe UI', 9, 'bold'), relief="groove", width=15, command=on_no).pack(side="left", padx=10)
+        tk.Button(btn_frame, text=self.t("button.yes_delete"), bg="#330000", fg="#ff0000", activebackground="#ff0000", activeforeground="#fff", font=('Segoe UI', 9, 'bold'), relief="groove", width=15, command=on_yes).pack(side="left", padx=10)
+        tk.Button(btn_frame, text=self.t("button.cancel"), bg=COLOR_CARD, fg=COLOR_ACCENT, activebackground=COLOR_ACCENT, activeforeground="#000", font=('Segoe UI', 9, 'bold'), relief="groove", width=15, command=on_no).pack(side="left", padx=10)
 
         self.root.wait_window(popup)
         return self.resultado_confirmacion
@@ -439,12 +890,12 @@ class App:
                     if hwnd == hwnd_activo:
                         if not bot.paused:
                             bot.pause(); bot.forced_pause = True
-                            self.log_status(f"👁️ [{bot.apodo}] Auto-Pausado.")
+                            self.log_status(self.t("log.auto_paused", nickname=bot.apodo))
                             cambio_detectado = True
                     else:
                         if bot.paused and bot.forced_pause and not bot.manual_pause:
                             bot.resume(); bot.forced_pause = False
-                            self.log_status(f"🔄 [{bot.apodo}] Auto-Reanudado.")
+                            self.log_status(self.t("log.auto_resumed", nickname=bot.apodo))
                             cambio_detectado = True
                 if cambio_detectado: self.root.after(0, self.actualizar_tabla_visual)
             except Exception: pass
@@ -456,28 +907,29 @@ class App:
         container = scroll_wrapper.scrollable_frame
 
         # 1. LISTA DE PERFILES E INSTANCIAS (READ)
-        frame_lista = ttk.LabelFrame(container, text=" 📋 INSTANCIAS Y PERFILES GUARDADOS ", style="Card.TLabelframe")
+        frame_lista = ttk.LabelFrame(container, text=self.t("frame.instances"), style="Card.TLabelframe")
         frame_lista.pack(fill="x", padx=10, pady=3)
         
         self.tabla_instancias = ttk.Treeview(frame_lista, columns=("apodo", "modo", "ventana", "delay", "estado"), show="headings", height=5)
-        for col, txt, w in [("apodo","Apodo",100), ("modo","Modo",95), ("ventana","Ventana Asignada",150), ("delay","Delay",55), ("estado","Estado",95)]:
+        for col, key, w in [("apodo","column.nickname",100), ("modo","column.mode",95), ("ventana","column.window",150), ("delay","column.delay",55), ("estado","column.status",95)]:
+            txt = self.t(key)
             self.tabla_instancias.heading(col, text=txt); self.tabla_instancias.column(col, width=w, anchor="center")
         self.tabla_instancias.pack(fill="x", padx=5, pady=5)
         self.tabla_instancias.bind("<<TreeviewSelect>>", self.cargar_datos_seleccionados)
 
         # 2. FORMULARIO DE EDICIÓN (CREATE / UPDATE)
-        frame_form = ttk.LabelFrame(container, text=" 🛠️ CONFIGURACIÓN DEL PERFIL ", style="Card.TLabelframe")
+        frame_form = ttk.LabelFrame(container, text=self.t("frame.profile"), style="Card.TLabelframe")
         frame_form.pack(fill="x", padx=10, pady=3)
         
         self.modo_var = tk.StringVar(value="MISION_Q")
 
         # Fila 1: Apodo y Ventana
         f1 = tk.Frame(frame_form, bg=COLOR_BG); f1.pack(fill="x", padx=10, pady=3)
-        tk.Label(f1, text="APODO:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=10).pack(side="left")
+        tk.Label(f1, text=self.t("label.nickname"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=10).pack(side="left")
         self.entry_apodo = tk.Entry(f1, width=12, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Segoe UI', 9))
         self.entry_apodo.pack(side="left", padx=5)
         
-        tk.Label(f1, text="VENTANA:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=10).pack(side="left", padx=(10,0))
+        tk.Label(f1, text=self.t("label.window"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=10).pack(side="left", padx=(10,0))
         self.combo_ventanas = ttk.Combobox(f1, state="readonly", width=24, font=('Segoe UI', 9))
         self.combo_ventanas.pack(side="left", padx=5, fill="x", expand=True)
         tk.Button(f1, text="🔄", bg=COLOR_CARD, fg=COLOR_ACCENT, relief="groove", command=self.actualizar_combo).pack(side="left", padx=2)
@@ -486,47 +938,52 @@ class App:
         f2 = tk.Frame(frame_form, bg=COLOR_BG); f2.pack(fill="x", padx=10, pady=1)
         def on_mode_change():
             self.actualizar_radio_colores()
-        self.rb_mision = tk.Radiobutton(f2, text="MISIÓN Q", variable=self.modo_var, value="MISION_Q", bg=COLOR_BG, fg=COLOR_TEXT_ON, selectcolor="#000", font=('Segoe UI', 9, 'bold'), command=on_mode_change)
+        self.rb_mision = tk.Radiobutton(f2, text=self.t("mode.mission"), variable=self.modo_var, value="MISION_Q", bg=COLOR_BG, fg=COLOR_TEXT_ON, selectcolor="#000", font=('Segoe UI', 9, 'bold'), command=on_mode_change)
         self.rb_mision.pack(side="left", padx=5)
-        self.rb_farma = tk.Radiobutton(f2, text="FARMA EXP", variable=self.modo_var, value="FARMA_EXP", bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", font=('Segoe UI', 9, 'bold'), command=on_mode_change)
+        self.rb_farma = tk.Radiobutton(f2, text=self.t("mode.farm"), variable=self.modo_var, value="FARMA_EXP", bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", font=('Segoe UI', 9, 'bold'), command=on_mode_change)
         self.rb_farma.pack(side="left", padx=5)
-        self.rb_summon = tk.Radiobutton(f2, text="SUMMON BOSS", variable=self.modo_var, value="SUMMON_BOSS", bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", font=('Segoe UI', 9, 'bold'), command=on_mode_change)
+        self.rb_summon = tk.Radiobutton(f2, text=self.t("mode.boss"), variable=self.modo_var, value="SUMMON_BOSS", bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", font=('Segoe UI', 9, 'bold'), command=on_mode_change)
         self.rb_summon.pack(side="left", padx=5)
+        self.mode_tooltips = [
+            ToolTip(self.rb_mision, self.t("tooltip.mode.mission")),
+            ToolTip(self.rb_farma, self.t("tooltip.mode.farm")),
+            ToolTip(self.rb_summon, self.t("tooltip.mode.boss")),
+        ]
 
         # Fila 3: Delay y Ulti
         f3 = tk.Frame(frame_form, bg=COLOR_BG); f3.pack(fill="x", padx=10, pady=3)
-        tk.Label(f3, text="DELAY (SEG):", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        tk.Label(f3, text=self.t("label.delay"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
         self.entry_delay = tk.Entry(f3, width=5, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
         self.entry_delay.insert(0, "5"); self.entry_delay.pack(side="left", padx=5)
-        self.check_ulti = tk.Checkbutton(f3, text="LANZAR ULTI [R]", variable=self.ulti_var, bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", state="disabled", activebackground=COLOR_BG, activeforeground=COLOR_SECONDARY, font=('Segoe UI', 9, 'bold'), command=on_mode_change)
+        self.check_ulti = tk.Checkbutton(f3, text=self.t("check.ultimate"), variable=self.ulti_var, bg=COLOR_BG, fg=COLOR_TEXT_OFF, selectcolor="#000", state="disabled", activebackground=COLOR_BG, activeforeground=COLOR_SECONDARY, font=('Segoe UI', 9, 'bold'), command=on_mode_change)
         self.check_ulti.pack(side="left", padx=15)
 
         # Botones CRUD
         btn_crud_frame = tk.Frame(frame_form, bg=COLOR_BG); btn_crud_frame.pack(fill="x", padx=10, pady=3)
-        tk.Button(btn_crud_frame, text="🆕 NUEVO", bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 8, 'bold'), relief="groove", command=self.limpiar_formulario).pack(side="left", fill="x", expand=True, padx=2)
-        tk.Button(btn_crud_frame, text="💾 GUARDAR / ACTUALIZAR", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.guardar_o_actualizar_perfil).pack(side="left", fill="x", expand=True, padx=2)
-        tk.Button(btn_crud_frame, text="🗑️ ELIMINAR", bg="#330000", fg="#ff0000", font=('Segoe UI', 8, 'bold'), relief="groove", command=self.eliminar_perfil_seleccionado).pack(side="left", fill="x", expand=True, padx=2)
+        tk.Button(btn_crud_frame, text=self.t("button.new"), bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 8, 'bold'), relief="groove", command=self.limpiar_formulario).pack(side="left", fill="x", expand=True, padx=2)
+        tk.Button(btn_crud_frame, text=self.t("button.save_profile"), bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.guardar_o_actualizar_perfil).pack(side="left", fill="x", expand=True, padx=2)
+        tk.Button(btn_crud_frame, text=self.t("button.delete"), bg="#330000", fg="#ff0000", font=('Segoe UI', 8, 'bold'), relief="groove", command=self.eliminar_perfil_seleccionado).pack(side="left", fill="x", expand=True, padx=2)
 
         # 3. CONTROL DE EJECUCIÓN
-        frame_exec = ttk.LabelFrame(container, text=" 🎮 CONTROL DE EJECUCIÓN ", style="Card.TLabelframe")
+        frame_exec = ttk.LabelFrame(container, text=self.t("frame.execution"), style="Card.TLabelframe")
         frame_exec.pack(fill="x", padx=10, pady=3)
         
         btn_exec_frame = tk.Frame(frame_exec, bg=COLOR_BG); btn_exec_frame.pack(pady=3, fill="x", padx=8)
 
-        self.btn_iniciar = tk.Button(btn_exec_frame, text="🚀 INICIAR BOT", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.iniciar_instancia)
+        self.btn_iniciar = tk.Button(btn_exec_frame, text=self.t("button.start"), font=('Segoe UI', 8, 'bold'), relief="flat", command=self.iniciar_instancia)
         self.btn_iniciar.pack(side="left", fill="x", expand=True, padx=2)
 
-        self.btn_pausar = tk.Button(btn_exec_frame, text="⏸️ PAUSAR", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.pausar_instancia)
+        self.btn_pausar = tk.Button(btn_exec_frame, text=self.t("button.pause"), font=('Segoe UI', 8, 'bold'), relief="flat", command=self.pausar_instancia)
         self.btn_pausar.pack(side="left", fill="x", expand=True, padx=2)
 
-        self.btn_reanudar = tk.Button(btn_exec_frame, text="▶️ REANUDAR", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.reanudar_instancia)
+        self.btn_reanudar = tk.Button(btn_exec_frame, text=self.t("button.resume"), font=('Segoe UI', 8, 'bold'), relief="flat", command=self.reanudar_instancia)
         self.btn_reanudar.pack(side="left", fill="x", expand=True, padx=2)
 
-        self.btn_detener = tk.Button(btn_exec_frame, text="🛑 DETENER", font=('Segoe UI', 8, 'bold'), relief="flat", command=self.detener_instancia)
+        self.btn_detener = tk.Button(btn_exec_frame, text=self.t("button.stop"), font=('Segoe UI', 8, 'bold'), relief="flat", command=self.detener_instancia)
         self.btn_detener.pack(side="left", fill="x", expand=True, padx=2)
 
         # 4. PANICO
-        btn_panico = tk.Button(container, text="☠️ BOTÓN DE PÁNICO (CERRAR TODO MIR4) ☠️",
+        btn_panico = tk.Button(container, text=self.t("button.panic"),
                                bg="#cc0000", fg="#ffffff", font=('Segoe UI', 9, 'bold'), 
                                relief="flat", activebackground="#ff3333", 
                                pady=3, command=self.boton_de_panico)
@@ -535,17 +992,17 @@ class App:
         self.actualizar_combo()
         self.actualizar_tabla_visual()
 
-        estado_uia = "✅ UIAutomation Seguro Cargado" if UIA_AVAILABLE else "❌ FALTA: Ejecuta 'pip install pywinauto'"
-        self.log_status(f"SabandijaBot {APP_VERSION} inicializado. [{estado_uia}]")
+        estado_uia = self.t("status.uia_ready") if UIA_AVAILABLE else self.t("status.uia_missing")
+        self.log_status(self.t("log.initialized", version=APP_VERSION, uia=estado_uia))
 
         ruta_abs_json = os.path.abspath(self.config_file)
         if os.path.exists(self.config_file):
-            self.log_status(f"📁 Archivo de configuración JSON ubicado en:\n   {ruta_abs_json}")
+            self.log_status(self.t("log.config_found", path=ruta_abs_json))
         else:
-            self.log_status(f"⚠️ No se encontró el archivo JSON. Se creará en:\n   {ruta_abs_json}")
+            self.log_status(self.t("log.config_missing", path=ruta_abs_json))
 
     def setup_tab_log(self):
-        frame_log = ttk.LabelFrame(self.tab_log, text=" HUNTING LOG ", style="Card.TLabelframe")
+        frame_log = ttk.LabelFrame(self.tab_log, text=self.t("frame.log"), style="Card.TLabelframe")
         frame_log.pack(fill="both", expand=True, padx=10, pady=10)
         self.txt_log = tk.Text(
             frame_log,
@@ -570,7 +1027,7 @@ class App:
         if self.combo_ventanas['values']:
             self.combo_ventanas.current(0)
         self.evaluar_estado_botones_seleccion()
-        self.log_status("📝 Formulario limpio. Listo para crear un nuevo perfil.")
+        self.log_status(self.t("log.form_cleared"))
 
     def cargar_datos_seleccionados(self, event=None):
         sel = self.tabla_instancias.selection()
@@ -614,10 +1071,10 @@ class App:
     def guardar_o_actualizar_perfil(self):
         apodo = self.entry_apodo.get().strip()
         if not apodo:
-            self.mostrar_alerta("Atención", "Debes ingresar un APODO\npara guardar el perfil.")
+            self.mostrar_alerta(self.t("popup.attention"), self.t("popup.nickname_required"))
             return
         if apodo in RESERVED_CONFIG_SECTIONS:
-            self.mostrar_alerta("Atención", f"[{apodo}] es un nombre reservado\nde configuración y no puede usarse como perfil.")
+            self.mostrar_alerta(self.t("popup.attention"), self.t("popup.reserved_name", nickname=apodo))
             return
 
         # Si el bot está corriendo, actualizamos en caliente
@@ -632,9 +1089,9 @@ class App:
                 bot.delay_personalizado = float(self.entry_delay.get())
                 if apodo: bot.apodo = apodo
                 bot.usar_ulti = self.ulti_var.get() if bot.modo == "FARMA_EXP" else False
-                self.log_status(f"⚙️ [{bot.apodo}] actualizado en caliente.")
+                self.log_status(self.t("log.updated_live", nickname=bot.apodo))
             except Exception as e:
-                self.log_status(f"❌ Error en caliente: {str(e)}")
+                self.log_status(self.t("log.error", error=e))
 
         # Guardar en JSON
         if apodo not in self.config:
@@ -653,12 +1110,12 @@ class App:
         self.config[apodo]["ventana_titulo"] = titulo_limpio
 
         self.guardar_config()
-        self.log_status(f"💾 Perfil [{apodo}] guardado exitosamente.")
+        self.log_status(self.t("log.saved_profile", nickname=apodo))
         self.actualizar_tabla_visual()
 
     def eliminar_perfil_seleccionado(self):
         if not self.tabla_instancias.selection():
-            self.mostrar_alerta("Atención", "Selecciona un perfil de la tabla\npara eliminar.")
+            self.mostrar_alerta(self.t("popup.attention"), self.t("popup.select_profile_delete"))
             return
 
         item = self.tabla_instancias.selection()[0]
@@ -667,18 +1124,18 @@ class App:
 
         hwnd_val = self.item_a_hwnd.get(item)
         if isinstance(hwnd_val, int) and hwnd_val in self.instancias_activas:
-            self.mostrar_alerta("Atención", "No puedes eliminar un perfil en ejecución.\nDetenlo primero.")
+            self.mostrar_alerta(self.t("popup.attention"), self.t("popup.running_profile"))
             return
 
         if apodo in self.config:
-            if self.pedir_confirmacion("Confirmar Eliminación", f"¿Seguro que quieres eliminar\nel perfil [{apodo}]?"):
+            if self.pedir_confirmacion(self.t("popup.confirm_delete"), self.t("popup.confirm_delete_message", nickname=apodo)):
                 del self.config[apodo]
                 self.guardar_config()
-                self.log_status(f"🗑️ Perfil [{apodo}] eliminado.")
+                self.log_status(self.t("log.deleted_profile", nickname=apodo))
                 self.actualizar_tabla_visual()
                 self.limpiar_formulario()
         else:
-            self.mostrar_alerta("Atención", "Ese no es un perfil guardado válido.")
+            self.mostrar_alerta(self.t("popup.attention"), self.t("popup.invalid_profile"))
 
     def evaluar_estado_botones_seleccion(self, event=None):
         sel = self.tabla_instancias.selection()
@@ -729,26 +1186,26 @@ class App:
 
         apodos_activos = []
         for hwnd, bot in self.instancias_activas.items():
-            estado = "AUTO-PAUSA 👁️" if (bot.paused and bot.forced_pause) else ("PAUSADO ⏸️" if bot.paused else "EJECUTANDO ▶️")
-            if not bot.is_alive() or not bot.running: estado = "TERMINADO 🛑"
+            estado = self.t("status.auto_paused") if (bot.paused and bot.forced_pause) else (self.t("status.paused") if bot.paused else self.t("status.running"))
+            if not bot.is_alive() or not bot.running: estado = self.t("status.finished")
             
             try:
                 titulo_ventana = win32gui.GetWindowText(hwnd) or f"HWND {hwnd}"
             except:
                 titulo_ventana = f"HWND {hwnd}"
                 
-            item = self.tabla_instancias.insert("", tk.END, values=(bot.apodo, bot.modo, titulo_ventana, f"{bot.delay_personalizado}s", estado))
+            item = self.tabla_instancias.insert("", tk.END, values=(bot.apodo, self.modo_visible(bot.modo), titulo_ventana, f"{bot.delay_personalizado}s", estado))
             self.item_a_hwnd[item] = hwnd
             if bot.apodo == apodo_seleccionado: self.tabla_instancias.selection_set(item)
             apodos_activos.append(bot.apodo)
 
         for section in self.config.keys():
-            if section in ['RUTAS', 'LAUNCHER', 'LAYOUT']: continue
+            if section in RESERVED_CONFIG_SECTIONS: continue
             if section not in apodos_activos:
                 modo = self.config[section].get("modo", "MISION_Q")
                 delay = self.config[section].get("delay", 5.0)
                 ventana_t = self.config[section].get("ventana_titulo", "Pendiente")
-                item = self.tabla_instancias.insert("", tk.END, values=(section, modo, ventana_t, f"{delay}s", "GUARDADO 💾"))
+                item = self.tabla_instancias.insert("", tk.END, values=(section, self.modo_visible(modo), ventana_t, f"{delay}s", self.t("status.saved")))
                 self.item_a_hwnd[item] = None
                 if section == apodo_seleccionado: self.tabla_instancias.selection_set(item)
 
@@ -768,14 +1225,14 @@ class App:
             if isinstance(hwnd_val, int):
                 return hwnd_val
                 
-        self.mostrar_alerta("Atención", "Selecciona una ventana válida\nen el formulario o despliega el perfil primero."); 
+        self.mostrar_alerta(self.t("popup.attention"), self.t("popup.select_window"));
         return None
 
     # --- CONTROL DE EJECUCIÓN ---
     def iniciar_instancia(self):
         apodo = self.entry_apodo.get().strip()
         if not apodo:
-            self.mostrar_alerta("Atención", "Debes ingresar o seleccionar un APODO.")
+            self.mostrar_alerta(self.t("popup.attention"), self.t("popup.nickname_start"))
             return
 
         # Asegurarnos de guardar el perfil antes de iniciar
@@ -783,13 +1240,13 @@ class App:
 
         sel = self.combo_ventanas.get()
         if not sel: 
-            self.mostrar_alerta("Atención", "No hay ninguna ventana de MIR4 seleccionada en el formulario.")
+            self.mostrar_alerta(self.t("popup.attention"), self.t("popup.no_mir4_window"))
             return
             
         try:
             hwnd = int(sel.split("(HWND: ")[1].replace(")", ""))
             if hwnd in self.instancias_activas and self.instancias_activas[hwnd].is_alive():
-                self.log_status(f"⚠️ HWND {hwnd} ya está en ejecución."); return
+                self.log_status(self.t("log.hwnd_running", hwnd=hwnd)); return
 
             modo = self.modo_var.get()
             delay = float(self.entry_delay.get())
@@ -798,44 +1255,44 @@ class App:
             bot = BotInstance(hwnd, modo, delay, usar_ulti, apodo)
             self.instancias_activas[hwnd] = bot
             bot.start()
-            self.log_status(f"✅ [{bot.apodo}] INICIADO y ejecutándose.")
+            self.log_status(self.t("log.started", nickname=bot.apodo))
             self.actualizar_tabla_visual()
-        except Exception as e: self.log_status(f"❌ Error: {str(e)}")
+        except Exception as e: self.log_status(self.t("log.error", error=e))
 
     def pausar_instancia(self):
         hwnd = self.obtener_hwnd_seleccionado()
         if hwnd and hwnd in self.instancias_activas:
             bot = self.instancias_activas[hwnd]; bot.manual_pause = True; bot.forced_pause = False; bot.pause()
-            self.log_status(f"⏸️ [{bot.apodo}] PAUSADO."); self.actualizar_tabla_visual()
+            self.log_status(self.t("log.paused", nickname=bot.apodo)); self.actualizar_tabla_visual()
 
     def reanudar_instancia(self):
         hwnd = self.obtener_hwnd_seleccionado()
         if hwnd and hwnd in self.instancias_activas:
             bot = self.instancias_activas[hwnd]; bot.manual_pause = False; bot.forced_pause = False; bot.resume()
-            self.log_status(f"▶️ [{bot.apodo}] REANUDADO."); self.actualizar_tabla_visual()
+            self.log_status(self.t("log.resumed", nickname=bot.apodo)); self.actualizar_tabla_visual()
 
     def detener_instancia(self):
         hwnd = self.obtener_hwnd_seleccionado()
         if hwnd and hwnd in self.instancias_activas:
             bot = self.instancias_activas[hwnd]; bot.stop(); del self.instancias_activas[hwnd]
-            self.log_status(f"🛑 [{bot.apodo}] DETENIDO."); self.actualizar_tabla_visual()
+            self.log_status(self.t("log.stopped", nickname=bot.apodo)); self.actualizar_tabla_visual()
 
     # --- TAB LAYOUT ---
     def setup_tab_layout(self):
-        frame_grid = ttk.LabelFrame(self.tab_layout, text=" RECTIL WINDOWS LAYOUT (GRID) ", style="Card.TLabelframe")
+        frame_grid = ttk.LabelFrame(self.tab_layout, text=self.t("frame.layout"), style="Card.TLabelframe")
         frame_grid.pack(fill="both", expand=True, padx=10, pady=10)
 
         layout_config = self.config.get('LAYOUT', {})
         saved_offset = layout_config.get('offset', 0)
 
-        self.label_offset = ttk.Label(frame_grid, text=f"Ajuste de Borde (Offset): {saved_offset}", background=COLOR_BG, foreground=COLOR_ACCENT, font=('Segoe UI', 10, 'bold'))
+        self.label_offset = ttk.Label(frame_grid, text=self.t("label.offset", value=saved_offset), background=COLOR_BG, foreground=COLOR_ACCENT, font=('Segoe UI', 10, 'bold'))
         self.label_offset.pack(pady=8)
 
         self.offset_var = tk.IntVar(value=saved_offset)
 
         def on_offset_change(v):
             val = int(float(v))
-            self.label_offset.config(text=f"Ajuste de Borde (Offset): {val}")
+            self.label_offset.config(text=self.t("label.offset", value=val))
             if 'LAYOUT' not in self.config: self.config['LAYOUT'] = {}
             self.config['LAYOUT']['offset'] = val
             self.guardar_config()
@@ -843,51 +1300,51 @@ class App:
         self.slider = ttk.Scale(frame_grid, from_=0, to=20, orient='horizontal', variable=self.offset_var, command=on_offset_change)
         self.slider.pack(fill="x", padx=30, pady=10)
 
-        frame_fixed = ttk.LabelFrame(frame_grid, text=" TAMAÑO FIJO ", style="Card.TLabelframe")
+        frame_fixed = ttk.LabelFrame(frame_grid, text=self.t("frame.fixed_size"), style="Card.TLabelframe")
         frame_fixed.pack(fill="x", padx=15, pady=(2, 5))
         fixed_row = tk.Frame(frame_fixed, bg=COLOR_BG)
         fixed_row.pack(fill="x", padx=8, pady=5)
 
-        tk.Label(fixed_row, text="ANCHO:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        tk.Label(fixed_row, text=self.t("label.width"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
         self.entry_layout_width = tk.Entry(fixed_row, width=7, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
         self.entry_layout_width.insert(0, str(layout_config.get('fixed_width', 800)))
         self.entry_layout_width.pack(side="left", padx=(4, 12))
 
-        tk.Label(fixed_row, text="ALTO:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        tk.Label(fixed_row, text=self.t("label.height"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
         self.entry_layout_height = tk.Entry(fixed_row, width=7, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
         self.entry_layout_height.insert(0, str(layout_config.get('fixed_height', 450)))
         self.entry_layout_height.pack(side="left", padx=(4, 12))
 
-        tk.Button(fixed_row, text="APLICAR TAMAÑO FIJO", bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 8, 'bold'), relief="groove", command=self.aplicar_tamano_fijo).pack(side="left", fill="x", expand=True)
+        tk.Button(fixed_row, text=self.t("button.apply_fixed"), bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 8, 'bold'), relief="groove", command=self.aplicar_tamano_fijo).pack(side="left", fill="x", expand=True)
 
-        frame_custom = ttk.LabelFrame(frame_grid, text=" DISTRIBUCIÓN PERSONALIZADA ", style="Card.TLabelframe")
+        frame_custom = ttk.LabelFrame(frame_grid, text=self.t("frame.custom_distribution"), style="Card.TLabelframe")
         frame_custom.pack(fill="x", padx=15, pady=5)
         custom_row = tk.Frame(frame_custom, bg=COLOR_BG)
         custom_row.pack(fill="x", padx=8, pady=5)
 
-        tk.Label(custom_row, text="COLUMNAS:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        tk.Label(custom_row, text=self.t("label.columns"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
         self.entry_layout_columns = tk.Entry(custom_row, width=5, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
         self.entry_layout_columns.insert(0, str(layout_config.get('columns', 2)))
         self.entry_layout_columns.pack(side="left", padx=(4, 12))
 
-        tk.Label(custom_row, text="FILAS:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
+        tk.Label(custom_row, text=self.t("label.rows"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(side="left")
         self.entry_layout_rows = tk.Entry(custom_row, width=5, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 10, 'bold'))
         self.entry_layout_rows.insert(0, str(layout_config.get('rows', 2)))
         self.entry_layout_rows.pack(side="left", padx=(4, 12))
 
-        tk.Button(custom_row, text="APLICAR FILAS Y COLUMNAS", bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 8, 'bold'), relief="groove", command=self.aplicar_distribucion_personalizada).pack(side="left", fill="x", expand=True)
+        tk.Button(custom_row, text=self.t("button.apply_grid"), bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 8, 'bold'), relief="groove", command=self.aplicar_distribucion_personalizada).pack(side="left", fill="x", expand=True)
 
-        tk.Button(frame_grid, text="⚡ ORDENAR Y ENFOCAR VENTANAS", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 10, 'bold'), relief="flat", activebackground=COLOR_SECONDARY, command=self.ordenar_grid_ventanas).pack(pady=(12, 6), fill="x", padx=25)
-        tk.Button(frame_grid, text="⬇️ MINIMIZAR TODAS LAS VENTANAS", bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 10, 'bold'), relief="flat", activebackground=COLOR_DISABLED_FG, command=self.minimizar_grid_ventanas).pack(pady=(0, 12), fill="x", padx=25)
+        tk.Button(frame_grid, text=self.t("button.arrange"), bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 10, 'bold'), relief="flat", activebackground=COLOR_SECONDARY, command=self.ordenar_grid_ventanas).pack(pady=(12, 6), fill="x", padx=25)
+        tk.Button(frame_grid, text=self.t("button.minimize"), bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 10, 'bold'), relief="flat", activebackground=COLOR_DISABLED_FG, command=self.minimizar_grid_ventanas).pack(pady=(0, 12), fill="x", padx=25)
 
     def _leer_entero_layout(self, entry, nombre):
         try:
             valor = int(entry.get().strip())
         except ValueError:
-            self.mostrar_alerta("Valor inválido", f"{nombre} debe ser un número entero positivo.")
+            self.mostrar_alerta(self.t("popup.invalid_value"), self.t("popup.invalid_layout", name=nombre))
             return None
         if valor <= 0:
-            self.mostrar_alerta("Valor inválido", f"{nombre} debe ser mayor que cero.")
+            self.mostrar_alerta(self.t("popup.invalid_value"), self.t("popup.positive_layout", name=nombre))
             return None
         return valor
 
@@ -910,15 +1367,15 @@ class App:
                 time.sleep(0.05)
 
             self.root.after(100, lambda: self.root.focus_force())
-            self.log_status(f"⚡ {mensaje} a {len(v_list)} ventanas MIR4 (Enfocadas).")
+            self.log_status(self.t("log.layout_applied", message=mensaje, count=len(v_list)))
         except Exception as e:
-            self.log_status(f"❌ Error Layout: {str(e)}")
+            self.log_status(self.t("log.layout_error", error=e))
 
     def ordenar_grid_ventanas(self):
         v_list = obtener_ventanas_mir4()
         v_list.sort()
         if not v_list:
-            self.log_status("⚠️ No hay ventanas MIR4/MIR4G del proceso del juego.")
+            self.log_status(self.t("log.no_windows"))
             return
 
         w_x, w_y, w_w, w_h = self._obtener_area_trabajo()
@@ -936,7 +1393,7 @@ class App:
             posiciones.append((hwnd, w_x + (c * win_w) - offset, w_y + (r * win_h), win_w + (offset * 2), win_h + offset))
 
         self._guardar_layout_valores(offset=offset)
-        self._mover_ventanas_layout(v_list, posiciones, "Grid automático aplicado")
+        self._mover_ventanas_layout(v_list, posiciones, self.t("log.layout_auto"))
 
     def aplicar_tamano_fijo(self):
         ancho = self._leer_entero_layout(self.entry_layout_width, "El ancho")
@@ -947,7 +1404,7 @@ class App:
         v_list = obtener_ventanas_mir4()
         v_list.sort()
         if not v_list:
-            self.log_status("⚠️ No hay ventanas MIR4/MIR4G del proceso del juego.")
+            self.log_status(self.t("log.no_windows"))
             return
 
         w_x, w_y, w_w, w_h = self._obtener_area_trabajo()
@@ -955,7 +1412,7 @@ class App:
         filas = w_h // alto
         capacidad = columnas * filas
         if capacidad == 0 or len(v_list) > capacidad:
-            self.mostrar_alerta("Tamaño no disponible", f"Con {ancho}x{alto} solo caben {capacidad} ventanas en el área útil del monitor.")
+            self.mostrar_alerta(self.t("popup.invalid_value"), self.t("popup.size_unavailable", width=ancho, height=alto, count=capacidad))
             return
 
         posiciones = []
@@ -965,7 +1422,7 @@ class App:
             posiciones.append((hwnd, w_x + columna * ancho - offset, w_y + fila * alto, ancho + (offset * 2), alto + offset))
 
         self._guardar_layout_valores(fixed_width=ancho, fixed_height=alto, offset=offset)
-        self._mover_ventanas_layout(v_list, posiciones, f"Tamaño fijo {ancho}x{alto} aplicado")
+        self._mover_ventanas_layout(v_list, posiciones, self.t("log.layout_fixed", width=ancho, height=alto))
 
     def aplicar_distribucion_personalizada(self):
         columnas = self._leer_entero_layout(self.entry_layout_columns, "Las columnas")
@@ -976,16 +1433,16 @@ class App:
         v_list = obtener_ventanas_mir4()
         v_list.sort()
         if not v_list:
-            self.log_status("⚠️ No hay ventanas MIR4/MIR4G del proceso del juego.")
+            self.log_status(self.t("log.no_windows"))
             return
 
         w_x, w_y, w_w, w_h = self._obtener_area_trabajo()
         espacios = columnas * filas
         if len(v_list) > espacios:
-            self.mostrar_alerta("Distribución insuficiente", f"La cuadrícula de {columnas}x{filas} solo tiene {espacios} espacios para {len(v_list)} ventanas.")
+            self.mostrar_alerta(self.t("popup.invalid_value"), self.t("popup.distribution_insufficient", columns=columnas, rows=filas, spaces=espacios, count=len(v_list)))
             return
         if columnas > w_w or filas > w_h:
-            self.mostrar_alerta("Distribución inválida", "La cantidad de filas o columnas supera el tamaño del área útil del monitor.")
+            self.mostrar_alerta(self.t("popup.invalid_value"), self.t("popup.distribution_invalid"))
             return
 
         ancho = w_w // columnas
@@ -997,19 +1454,19 @@ class App:
             posiciones.append((hwnd, w_x + columna * ancho - offset, w_y + fila * alto, ancho + (offset * 2), alto + offset))
 
         self._guardar_layout_valores(columns=columnas, rows=filas, offset=offset)
-        self._mover_ventanas_layout(v_list, posiciones, f"Distribución {columnas}x{filas} aplicada")
+        self._mover_ventanas_layout(v_list, posiciones, self.t("log.layout_custom", columns=columnas, rows=filas))
 
     def minimizar_grid_ventanas(self):
         v_list = obtener_ventanas_mir4()
         v_list.sort()
         if not v_list:
-            self.log_status("⚠️ No hay ventanas MIR4/MIR4G del proceso del juego para minimizar.")
+            self.log_status(self.t("log.no_windows_minimize"))
             return
         try:
             for hwnd in v_list:
                 win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
-            self.log_status(f"⬇️ {len(v_list)} ventanas MIR4 minimizadas.")
-        except Exception as e: self.log_status(f"❌ Error al minimizar: {str(e)}")
+            self.log_status(self.t("log.minimized", count=len(v_list)))
+        except Exception as e: self.log_status(self.t("log.error", error=e))
 
     # --- TAB DESPLIEGUE ---
     def setup_tab_despliegue(self):
@@ -1017,24 +1474,24 @@ class App:
         scroll_wrapper.pack(fill="both", expand=True)
         container = scroll_wrapper.scrollable_frame
 
-        frame_steam = ttk.LabelFrame(container, text=" INFRAESTRUCTURA STEAM ", style="Card.TLabelframe")
+        frame_steam = ttk.LabelFrame(container, text=self.t("frame.steam"), style="Card.TLabelframe")
         frame_steam.pack(fill="x", padx=15, pady=(10, 5))
-        tk.Label(frame_steam, text="Ruta Steam Launcher:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(anchor="w", padx=15, pady=(5,0))
+        tk.Label(frame_steam, text=self.t("label.launcher_path"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold')).pack(anchor="w", padx=15, pady=(5,0))
         self.ent_steam = tk.Entry(frame_steam, bg=COLOR_INPUT_BG, fg="#fff", borderwidth=0, font=('Segoe UI', 9))
         steam_path = self.config.get('RUTAS', {}).get('steam', r"C:\Program Files (x86)\Steam\steam.exe")
         self.ent_steam.insert(0, steam_path)
         self.ent_steam.pack(fill="x", padx=15, pady=2)
         btn_steam_frame = tk.Frame(frame_steam, bg=COLOR_BG)
         btn_steam_frame.pack(fill="x", padx=15, pady=(5, 10))
-        tk.Button(btn_steam_frame, text="💾 GUARDAR RUTA STEAM", bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 9, 'bold'), relief="groove", command=self.guardar_rutas_interfaz).pack(side="left", fill="x", expand=True, padx=5)
-        tk.Button(btn_steam_frame, text="🎮 INICIAR MIR4 DESDE STEAM", bg="#0054a6", fg="#fff", font=('Segoe UI', 10, 'bold'), relief="flat", command=self.lanzar_steam).pack(side="left", fill="x", expand=True, padx=5)
+        tk.Button(btn_steam_frame, text=self.t("button.save_steam"), bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 9, 'bold'), relief="groove", command=self.guardar_rutas_interfaz).pack(side="left", fill="x", expand=True, padx=5)
+        tk.Button(btn_steam_frame, text=self.t("button.start_steam"), bg="#0054a6", fg="#fff", font=('Segoe UI', 10, 'bold'), relief="flat", command=self.lanzar_steam).pack(side="left", fill="x", expand=True, padx=5)
 
-        frame_ruta = ttk.LabelFrame(container, text=" RUTA DEL LAUNCHER MIR4 (GAME 1 & 2) ", style="Card.TLabelframe")
+        frame_ruta = ttk.LabelFrame(container, text=self.t("frame.launcher_path"), style="Card.TLabelframe")
         frame_ruta.pack(fill="x", padx=15, pady=5)
         self.ent_launcher = tk.Entry(frame_ruta, bg=COLOR_INPUT_BG, fg="#fff", borderwidth=0, font=('Segoe UI', 9))
         self.ent_launcher.pack(fill="x", padx=15, pady=(10,5))
 
-        frame_coord = ttk.LabelFrame(container, text=" COORDENADAS DE BOTONES (X, Y) ", style="Card.TLabelframe")
+        frame_coord = ttk.LabelFrame(container, text=self.t("frame.coordinates"), style="Card.TLabelframe")
         frame_coord.pack(fill="x", padx=15, pady=5)
 
         f1 = tk.Frame(frame_coord, bg=COLOR_BG); f1.pack(fill="x", padx=15, pady=5)
@@ -1042,43 +1499,43 @@ class App:
         self.ent_g1_x = tk.Entry(f1, width=8, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 11, 'bold')); self.ent_g1_x.pack(side="left", padx=5)
         tk.Label(f1, text="Y:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Consolas', 10, 'bold')).pack(side="left", padx=(10,0))
         self.ent_g1_y = tk.Entry(f1, width=8, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 11, 'bold')); self.ent_g1_y.pack(side="left", padx=5)
-        tk.Button(f1, text="🎯 Capturar", bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 8, 'bold'), relief="flat", command=lambda: self.iniciar_captura(self.ent_g1_x, self.ent_g1_y)).pack(side="right", padx=5)
+        tk.Button(f1, text=self.t("button.capture"), bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 8, 'bold'), relief="flat", command=lambda: self.iniciar_captura(self.ent_g1_x, self.ent_g1_y)).pack(side="right", padx=5)
 
         f2 = tk.Frame(frame_coord, bg=COLOR_BG); f2.pack(fill="x", padx=15, pady=5)
         tk.Label(f2, text="GAME 2 -> X:", bg=COLOR_BG, fg=COLOR_SECONDARY, font=('Consolas', 10, 'bold'), width=12, anchor="w").pack(side="left")
         self.ent_g2_x = tk.Entry(f2, width=8, bg=COLOR_INPUT_BG, fg=COLOR_SECONDARY, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 11, 'bold')); self.ent_g2_x.pack(side="left", padx=5)
         tk.Label(f2, text="Y:", bg=COLOR_BG, fg=COLOR_SECONDARY, font=('Consolas', 10, 'bold')).pack(side="left", padx=(10,0))
         self.ent_g2_y = tk.Entry(f2, width=8, bg=COLOR_INPUT_BG, fg=COLOR_SECONDARY, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 11, 'bold')); self.ent_g2_y.pack(side="left", padx=5)
-        tk.Button(f2, text="🎯 Capturar", bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 8, 'bold'), relief="flat", command=lambda: self.iniciar_captura(self.ent_g2_x, self.ent_g2_y)).pack(side="right", padx=5)
+        tk.Button(f2, text=self.t("button.capture"), bg=COLOR_CARD, fg="#fff", font=('Segoe UI', 8, 'bold'), relief="flat", command=lambda: self.iniciar_captura(self.ent_g2_x, self.ent_g2_y)).pack(side="right", padx=5)
 
-        frame_extra = ttk.LabelFrame(container, text=" AJUSTES FINOS ", style="Card.TLabelframe")
+        frame_extra = ttk.LabelFrame(container, text=self.t("frame.fine_tuning"), style="Card.TLabelframe")
         frame_extra.pack(fill="x", padx=15, pady=5)
 
         f3 = tk.Frame(frame_extra, bg=COLOR_BG); f3.pack(fill="x", padx=15, pady=5)
-        tk.Label(f3, text="TITULO O CLASE:", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=16, anchor="w").pack(side="left")
+        tk.Label(f3, text=self.t("label.title_class"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=16, anchor="w").pack(side="left")
         self.ent_titulo_launcher = tk.Entry(f3, bg=COLOR_INPUT_BG, fg="#fff", insertbackground=COLOR_ACCENT, borderwidth=0, font=('Segoe UI', 9))
         self.ent_titulo_launcher.pack(side="left", fill="x", expand=True, padx=5)
-        tk.Label(frame_extra, text="💡 Si no lo encuentra, usa solo: MIR4", bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 8, 'italic')).pack(anchor="w", padx=20)
+        tk.Label(frame_extra, text=self.t("label.launcher_hint"), bg=COLOR_BG, fg=COLOR_TEXT_OFF, font=('Segoe UI', 8, 'italic')).pack(anchor="w", padx=20)
 
         f5 = tk.Frame(frame_extra, bg=COLOR_BG); f5.pack(fill="x", padx=15, pady=5)
-        tk.Label(f5, text="ESPERA TRAS ENCONTRAR LAUNCHER (Seg):", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=30, anchor="w").pack(side="left")
+        tk.Label(f5, text=self.t("label.launcher_wait"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=30, anchor="w").pack(side="left")
         self.ent_delay_pre_click = tk.Entry(f5, width=6, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 11, 'bold'))
         self.ent_delay_pre_click.pack(side="left", padx=5)
 
         f4 = tk.Frame(frame_extra, bg=COLOR_BG); f4.pack(fill="x", padx=15, pady=(0,10))
-        tk.Label(f4, text="ESPERA ENTRE G1 Y G2 (Seg):", bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=30, anchor="w").pack(side="left")
+        tk.Label(f4, text=self.t("label.game_wait"), bg=COLOR_BG, fg=COLOR_ACCENT, font=('Segoe UI', 9, 'bold'), width=30, anchor="w").pack(side="left")
         self.ent_delay_launch = tk.Entry(f4, width=6, bg=COLOR_INPUT_BG, fg=COLOR_ACCENT, insertbackground=COLOR_ACCENT, borderwidth=0, font=('Consolas', 11, 'bold'))
         self.ent_delay_launch.pack(side="left", padx=5)
 
         frame_btn = tk.Frame(container, bg=COLOR_BG); frame_btn.pack(fill="x", padx=15, pady=15)
-        tk.Button(frame_btn, text="💾 GUARDAR CONFIG LAUNCHER", bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 10, 'bold'), relief="groove", command=self.guardar_config_launcher).pack(side="left", fill="x", expand=True, padx=5)
-        tk.Button(frame_btn, text="🛡️ INICIAR (UIAutomation Seguro)", bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 11, 'bold'), relief="flat", activebackground=COLOR_SECONDARY, command=self.lanzar_game1_game2).pack(side="left", fill="x", expand=True, padx=5)
+        tk.Button(frame_btn, text=self.t("button.save_launcher"), bg=COLOR_CARD, fg=COLOR_SECONDARY, font=('Segoe UI', 10, 'bold'), relief="groove", command=self.guardar_config_launcher).pack(side="left", fill="x", expand=True, padx=5)
+        tk.Button(frame_btn, text=self.t("button.start_uia"), bg=COLOR_ACCENT, fg="#000", font=('Segoe UI', 11, 'bold'), relief="flat", activebackground=COLOR_SECONDARY, command=self.lanzar_game1_game2).pack(side="left", fill="x", expand=True, padx=5)
 
         self.cargar_config_launcher()
 
     def boton_de_panico(self):
         try:
-            self.log_status("☠️ BOTÓN DE PÁNICO ACTIVADO. Eliminando procesos...")
+            self.log_status(self.t("log.panic_started"))
             ejecutables = ["Mir4G.exe", "Mir4Launcher.exe", "Mir4GClient.exe", "Mir4Client.exe", "Mir4.exe", "Mir4S.exe", "Mir4-Win64-Shipping.exe", "Mir4G-Win64-Shipping.exe"]
             for exe in ejecutables:
                 subprocess.run(f"taskkill /F /IM {exe} /T", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -1086,10 +1543,10 @@ class App:
                 bot.stop()
             self.instancias_activas.clear()
             self.actualizar_tabla_visual()
-            self.log_status("✅ Todos los procesos Mir4 (incluido Steam) han sido aniquilados.")
+            self.log_status(self.t("log.panic_finished"))
 
             popup = tk.Toplevel(self.root)
-            popup.title("SISTEMA DE EMERGENCIA")
+            popup.title(self.t("popup.panic_title"))
             popup.geometry("380x180")
             popup.configure(bg=COLOR_BG)
             popup.resizable(False, False)
@@ -1100,13 +1557,13 @@ class App:
             y = self.root.winfo_y() + (self.root.winfo_height() // 2) - 90
             popup.geometry(f"+{x}+{y}")
 
-            tk.Label(popup, text="☠️ SECUENCIA DE PÁNICO ☠️", bg=COLOR_BG, fg=COLOR_CAPTURA, font=('Segoe UI', 14, 'bold')).pack(pady=(15, 5))
-            tk.Label(popup, text="¡Aniquilación completada con éxito!\nTodos los procesos de MIR4 y sus Launchers\nhan sido cerrados de manera forzada.", bg=COLOR_BG, fg="#ffffff", font=('Segoe UI', 10)).pack(pady=10)
-            btn_ok = tk.Button(popup, text="ENTENDIDO", bg=COLOR_CARD, fg=COLOR_ACCENT, activebackground=COLOR_ACCENT, activeforeground="#000", font=('Segoe UI', 9, 'bold'), relief="groove", width=15, command=popup.destroy)
+            tk.Label(popup, text=self.t("popup.panic_header"), bg=COLOR_BG, fg=COLOR_CAPTURA, font=('Segoe UI', 14, 'bold')).pack(pady=(15, 5))
+            tk.Label(popup, text=self.t("popup.panic_message"), bg=COLOR_BG, fg="#ffffff", font=('Segoe UI', 10)).pack(pady=10)
+            btn_ok = tk.Button(popup, text=self.t("button.ok"), bg=COLOR_CARD, fg=COLOR_ACCENT, activebackground=COLOR_ACCENT, activeforeground="#000", font=('Segoe UI', 9, 'bold'), relief="groove", width=15, command=popup.destroy)
             btn_ok.pack(pady=(5, 10))
 
         except Exception as e:
-            self.log_status(f"❌ Error al intentar cerrar los procesos: {str(e)}")
+            self.log_status(self.t("log.panic_error", error=e))
 
     def cerrar_ventanas_steam(self):
         nombres_proceso = {"steam.exe", "steamwebhelper.exe"}
@@ -1137,7 +1594,7 @@ class App:
             return True
 
         win32gui.EnumWindows(callback, None)
-        self.log_status(f"🪟 Ventanas de Steam cerradas: {cerradas}.")
+        self.log_status(self.t("log.steam_closed", count=cerradas))
 
     def esperar_mir4_y_cerrar_steam(self, ventanas_anteriores):
         limite = time.time() + 120
@@ -1147,12 +1604,12 @@ class App:
                 self.cerrar_ventanas_steam()
                 return
             time.sleep(0.5)
-        self.log_status("⚠️ MIR4 no apareció a tiempo; no se cerraron ventanas de Steam.")
+        self.log_status(self.t("log.mir4_timeout"))
 
     def iniciar_captura(self, entry_x, entry_y):
         if self.capturando_activo: return
         self.capturando_activo = True
-        self.log_status("🎯 MODO CAPTURA ACTIVADO. Haz clic en el botón del Launcher...")
+        self.log_status(self.t("log.capture_started"))
         original_bg_x = entry_x.cget('bg'); original_bg_y = entry_y.cget('bg')
         entry_x.configure(bg=COLOR_CAPTURA); entry_y.configure(bg=COLOR_CAPTURA)
         threading.Thread(target=self._hilo_captura, args=(entry_x, entry_y, original_bg_x, original_bg_y), daemon=True).start()
@@ -1181,12 +1638,12 @@ class App:
                     self.root.after(0, self._terminar_captura, entry_x, entry_y, str(rel_x), str(rel_y), original_bg_x, original_bg_y, True)
                     return
                 else:
-                    self.root.after(0, self._terminar_captura, entry_x, entry_y, "0", "0", original_bg_x, original_bg_y, False, "Clic fuera de la ventana.")
+                    self.root.after(0, self._terminar_captura, entry_x, entry_y, "0", "0", original_bg_x, original_bg_y, False, self.t("capture.outside_window"))
                     return
             else:
-                self.root.after(0, self._terminar_captura, entry_x, entry_y, str(screen_x), str(screen_y), original_bg_x, original_bg_y, False, "Launcher no encontrado.")
+                self.root.after(0, self._terminar_captura, entry_x, entry_y, str(screen_x), str(screen_y), original_bg_x, original_bg_y, False, self.t("log.launcher_not_found"))
         except Exception as e:
-            self.root.after(0, self._terminar_captura, entry_x, entry_y, "0", "0", original_bg_x, original_bg_y, False, f"Error: {str(e)}")
+            self.root.after(0, self._terminar_captura, entry_x, entry_y, "0", "0", original_bg_x, original_bg_y, False, self.t("log.error", error=e))
 
     def _actualizar_texto_captura(self, entry_x, entry_y, x, y):
         entry_x.delete(0, tk.END); entry_x.insert(0, str(x))
@@ -1198,14 +1655,14 @@ class App:
         if exito:
             entry_x.delete(0, tk.END); entry_x.insert(0, x)
             entry_y.delete(0, tk.END); entry_y.insert(0, y)
-            self.log_status(f"✅ Coordenadas capturadas: X={x}, Y={y}")
+            self.log_status(self.t("log.coordinates_captured", x=x, y=y))
         else:
-            self.log_status(f"❌ Captura fallida. {msg_extra}")
+            self.log_status(self.t("log.capture_failed", message=msg_extra))
 
     def guardar_rutas_interfaz(self):
         if 'RUTAS' not in self.config: self.config['RUTAS'] = {}
         self.config['RUTAS']['steam'] = self.ent_steam.get()
-        self.guardar_config(); self.log_status("💾 Ruta de Steam actualizada.")
+        self.guardar_config(); self.log_status(self.t("log.steam_updated"))
 
     def lanzar_steam(self):
         ruta = self.ent_steam.get()
@@ -1218,9 +1675,9 @@ class App:
                     args=(ventanas_anteriores,),
                     daemon=True,
                 ).start()
-                self.log_status("🎮 Solicitud enviada a Steam.")
-            except Exception as e: self.log_status(f"❌ Error en Steam: {str(e)}")
-        else: self.log_status("❌ Steam no localizado.")
+                self.log_status(self.t("log.steam_request"))
+            except Exception as e: self.log_status(self.t("log.steam_error", error=e))
+        else: self.log_status(self.t("log.steam_missing"))
 
     def guardar_config_launcher(self):
         if 'LAUNCHER' not in self.config: self.config['LAUNCHER'] = {}
@@ -1234,11 +1691,11 @@ class App:
             self.config['LAUNCHER']['delay_pre_click'] = float(self.ent_delay_pre_click.get())
             self.config['LAUNCHER']['delay'] = float(self.ent_delay_launch.get())
         except ValueError:
-            self.log_status("❌ Error: Verifica que las coordenadas y tiempos sean números.")
+            self.log_status(self.t("log.coordinates_error"))
             return
 
         self.guardar_config()
-        self.log_status("💾 Configuración de Launcher guardada.")
+        self.log_status(self.t("log.launcher_saved"))
 
     def cargar_config_launcher(self):
         defaults = {
@@ -1261,8 +1718,8 @@ class App:
 
     def lanzar_game1_game2(self):
         if not UIA_AVAILABLE:
-            self.log_status("❌ FALTA LIBRERIA ANTI-BAN. CMD > pip install pywinauto")
-            self.mostrar_alerta("Error Crítico", "Falta la librería 'pywinauto'.\nAbre CMD y ejecuta: pip install pywinauto\n\nLuego reinicia el bot.", es_error=True)
+            self.log_status(self.t("log.anti_ban_missing"))
+            self.mostrar_alerta(self.t("popup.critical_error"), self.t("popup.critical_error_message"), es_error=True)
             return
         try:
             ruta = self.ent_launcher.get()
@@ -1271,28 +1728,28 @@ class App:
             titulo_launcher = self.ent_titulo_launcher.get()
             delay_pre_click = int(float(self.ent_delay_pre_click.get()))
             delay = int(float(self.ent_delay_launch.get()))
-            if not os.path.exists(ruta): self.log_status("❌ Ruta incorrecta."); return
-            self.log_status("🛡️ Iniciando Secuencia Segura (UIAutomation)...")
+            if not os.path.exists(ruta): self.log_status(self.t("log.invalid_path")); return
+            self.log_status(self.t("log.safe_sequence"))
             threading.Thread(target=self._hilo_lanzamiento_uia, args=(ruta, g1_x, g1_y, g2_x, g2_y, titulo_launcher, delay_pre_click, delay), daemon=True).start()
-        except ValueError: self.log_status("❌ Error: Los tiempos y coordenadas deben ser números.")
-        except Exception as e: self.log_status(f"❌ Error al leer configuración: {str(e)}")
+        except ValueError: self.log_status(self.t("log.coordinates_error"))
+        except Exception as e: self.log_status(self.t("log.error", error=e))
 
     def uia_click(self, hwnd, target_x, target_y):
         try:
             abs_x, abs_y = win32gui.ClientToScreen(hwnd, (target_x, target_y))
             desktop = Desktop(backend="uia"); launcher = desktop.window(handle=hwnd)
-            self.log_status(f"🔍 Escaneando elementos UIA en ({abs_x}, {abs_y})...")
+            self.log_status(self.t("log.uia_scan", x=abs_x, y=abs_y))
 
             buttons = launcher.descendants(control_type="Button")
             for btn in buttons:
                 rect = btn.rectangle()
                 if rect.left <= abs_x <= rect.right and rect.top <= abs_y <= rect.bottom:
                     if btn.is_enabled():
-                        self.log_status("✅ Botón oficial detectado. Invocando...")
+                        self.log_status(self.t("log.uia_button"))
                         btn.invoke()
                         return True
 
-            self.log_status("⚠️ Buscando controles genéricos...")
+            self.log_status(self.t("log.uia_generic"))
             controls = launcher.descendants()
             for ctrl in controls:
                 try:
@@ -1300,7 +1757,7 @@ class App:
                     if rect.left <= abs_x <= rect.right and rect.top <= abs_y <= rect.bottom:
                         if ctrl.is_enabled():
                             try:
-                                self.log_status(f"✅ Control encontrado ({ctrl.element_info.class_name}). Invocando...")
+                                self.log_status(self.t("log.uia_control", class_name=ctrl.element_info.class_name))
                                 ctrl.invoke()
                                 return True
                             except Exception:
@@ -1308,53 +1765,53 @@ class App:
                 except Exception:
                     continue
 
-            self.log_status("❌ No se pudo encontrar elemento clickeable en esas coordenadas.")
+            self.log_status(self.t("log.uia_not_found"))
             return False
         except Exception as e:
-            self.log_status(f"❌ Error interno UIA: {str(e)}")
+            self.log_status(self.t("log.uia_error", error=e))
             return False
 
     def _hilo_lanzamiento_uia(self, ruta, g1_x, g1_y, g2_x, g2_y, titulo_launcher, delay_pre_click, delay):
         try:
-            self.log_status("🚀 Abriendo ejecutable del Launcher...")
+            self.log_status(self.t("log.launcher_open"))
             subprocess.Popen(ruta)
 
-            self.log_status(f"⏳ Buscando ventana ('{titulo_launcher}')...")
+            self.log_status(self.t("log.launcher_search", title=titulo_launcher))
             hwnd_launcher = esperar_ventana(titulo_launcher, timeout=30)
             if not hwnd_launcher:
-                self.log_status("❌ No se encontró la ventana del Launcher.")
+                self.log_status(self.t("log.launcher_not_found"))
                 return
 
-            self.log_status(f"✅ ¡Ventana encontrada (HWND: {hwnd_launcher})!")
-            self.log_status(f"⏳ Esperando {delay_pre_click} seg para renderizar UI...")
+            self.log_status(self.t("log.window_found", hwnd=hwnd_launcher))
+            self.log_status(self.t("log.wait_render", seconds=delay_pre_click))
             time.sleep(delay_pre_click)
 
-            self.log_status(f"🛡️ Presionando Game 1 vía UIAutomation...")
+            self.log_status(self.t("log.press_game", game="Game 1"))
             if not self.uia_click(hwnd_launcher, g1_x, g1_y): return
 
-            self.log_status("⏳ Esperando que cargue Game 1...")
+            self.log_status(self.t("log.wait_game", game="Game 1"))
             if not esperar_ventana("Mir4G", timeout=90):
-                self.log_status("⚠️ Game 1 tardó demasiado, pero continuando con Game 2...")
+                self.log_status(self.t("log.game_slow", game="Game 1", next_game="Game 2"))
 
-            self.log_status(f"💤 Esperando {delay} segundos...")
+            self.log_status(self.t("log.wait_seconds", seconds=delay))
             time.sleep(delay)
 
             hwnd_launcher = esperar_ventana(titulo_launcher, timeout=15)
             if not hwnd_launcher:
-                self.log_status("❌ No se pudo encontrar el Launcher para abrir el Game 2.")
+                self.log_status(self.t("log.game_launcher_missing", game="Game 2"))
                 return
 
-            self.log_status(f"🛡️ Presionando Game 2 vía UIAutomation...")
+            self.log_status(self.t("log.press_game", game="Game 2"))
             if not self.uia_click(hwnd_launcher, g2_x, g2_y): return
 
-            self.log_status("⏳ Esperando que cargue Game 2...")
+            self.log_status(self.t("log.wait_game", game="Game 2"))
             if esperar_ventana("Mir4G", timeout=90):
-                self.log_status("🎉 ¡Despliegue completado 100% Seguro!")
+                self.log_status(self.t("log.deploy_complete"))
             else:
-                self.log_status("⚠️ Proceso finalizado, pero Game 2 pudo no haber cargado a tiempo.")
+                self.log_status(self.t("log.deploy_timeout", game="Game 2"))
 
         except Exception as e:
-            self.log_status(f"❌ Error crítico en el Launcher: {str(e)}")
+            self.log_status(self.t("log.launcher_error", error=e))
 
     # --- FUNCIÓN DE GUARDADO JSON ---
     def guardar_config(self):
